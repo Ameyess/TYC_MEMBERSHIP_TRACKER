@@ -668,7 +668,14 @@ async function fetchMembers() {
 }
 
 async function doRefresh(){showOv('Refreshing...');_lastHash='';await fetchMembers();hideOv();renderCurrent();showToast('Refreshed.');}
-function startAR(){if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(async()=>{const c=await fetchMembers();if(c)renderCurrent();},5000);}
+function startAR(){
+  if(refreshTimer)clearInterval(refreshTimer);
+  refreshTimer=setInterval(async()=>{
+    const c=await fetchMembers();
+    if(c)renderCurrent();
+    if(curPage==='events') fetchEvents().then(()=>renderEvents());
+  },5000);
+}
 
 // ── SYNC STATUS ───────────────────────────────────────────────────────────────
 function setSS(state,msg){
@@ -712,7 +719,7 @@ function renderCurrent(){
   else if(curPage==='pipeline')renderPipeline();
   else if(curPage==='members')renderMembers();
   else if(curPage==='analytics')renderAnalytics();
-  else if(curPage==='events')renderEvents();
+  else if(curPage==='events'){fetchEvents().then(()=>renderEvents());}
   else if(curPage==='parliament')renderBills();
   else if(curPage==='tasks')renderTasks();
   else if(curPage==='emails')renderEmailCenter();
@@ -1006,46 +1013,140 @@ function renderChapterBreakdown(){
     :'<p style="font-size:.8rem;color:#aaa">No chapter data available.</p>';
 }
 
-// ── EVENTS ────────────────────────────────────────────────────────────────────
-let editEventId=null;
-function renderEvents(){
-  const fp=document.getElementById('ev-prov')?.value||'';
-  const fs=document.getElementById('ev-status')?.value||'';
-  const events=getEvents().filter(e=>(!fp||e.province===fp)&&(!fs||e.status===fs));
-  const el=document.getElementById('events-list');
-  if(!events.length){el.innerHTML='<div class="es"><div class="ei">📅</div><p>No events logged. Add one above.</p></div>';return;}
-  el.innerHTML=events.map(ev=>{
-    const ph={Done:'✅',Pending:'⏳'};
-    return `<div class="bill-card">
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:.9rem">${esc(ev.title)}</div>
-        <div style="font-size:.73rem;color:#888;margin-top:2px">${esc(ev.province)} ${ev.chapter?'- '+esc(ev.chapter):''} - ${esc(ev.date||'No date')} - ${esc(ev.tier||'')}</div>
-        <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
-          <span style="font-size:.7rem">${ph[ev.phase1]||'⏳'} Phase 1: Parliament Vote</span>
-          <span style="font-size:.7rem">${ph[ev.phase2]||'⏳'} Phase 2: Fiscal Form</span>
-          <span style="font-size:.7rem">${ph[ev.phase3]||'⏳'} Phase 3: National Sync</span>
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-        <span class="bill-stage bs-${ev.status}">${esc(ev.status)}</span>
-        <button class="btn btn-o btn-sm" onclick="editEvent('${ev.id}')">Edit</button>
-        <button class="btn btn-d btn-sm" onclick="deleteEvent('${ev.id}')">Delete</button>
-      </div>
-    </div>`;
-  }).join('');
+// ── EVENTS (live from Sheet) ──────────────────────────────────────────────────
+let SHEET_EVENTS = []; // cache from Sheet
+let editEventId = null;
+
+async function fetchEvents() {
+  try {
+    const data = await callScript({action:'getEvents'});
+    if(Array.isArray(data)){ SHEET_EVENTS = data; return true; }
+  } catch(e){ console.error('fetchEvents:', e); }
+  return false;
 }
 
-function openAddEvent(){editEventId=null;document.getElementById('ev-modal-title').textContent='Log Event';['ev-title','ev-chapter','ev-desc'].forEach(id=>document.getElementById(id).value='');document.getElementById('ev-prov-m').value='';document.getElementById('ev-date').value='';document.getElementById('ev-tier').value='Tier 1 ($0)';document.getElementById('ev-status-m').value='Planning';document.getElementById('ev-ph1').value='Pending';document.getElementById('ev-ph2').value='Pending';document.getElementById('ev-ph3').value='Pending';document.getElementById('ev-attendance').value='';document.getElementById('event-modal').classList.add('open');}
-function editEvent(id){const ev=getEvents().find(e=>e.id===id);if(!ev)return;editEventId=id;document.getElementById('ev-modal-title').textContent='Edit Event';document.getElementById('ev-title').value=ev.title||'';document.getElementById('ev-prov-m').value=ev.province||'';document.getElementById('ev-chapter').value=ev.chapter||'';document.getElementById('ev-date').value=ev.date||'';document.getElementById('ev-tier').value=ev.tier||'Tier 1 ($0)';document.getElementById('ev-status-m').value=ev.status||'Planning';document.getElementById('ev-ph1').value=ev.phase1||'Pending';document.getElementById('ev-ph2').value=ev.phase2||'Pending';document.getElementById('ev-ph3').value=ev.phase3||'Pending';document.getElementById('ev-attendance').value=ev.attendance||'';document.getElementById('ev-desc').value=ev.desc||'';document.getElementById('event-modal').classList.add('open');}
+function renderEvents(){
+  const fp = document.getElementById('ev-prov')?.value||'';
+  const fs = document.getElementById('ev-status')?.value||'';
+
+  // Merge Sheet events + locally logged events
+  const localEvents = getEvents();
+  const allEvents = [...SHEET_EVENTS, ...localEvents];
+
+  const filtered = allEvents.filter(e=>(!fp||e.province===fp)&&(!fs||e.status===fs));
+  const el = document.getElementById('events-list');
+  if(!filtered.length){el.innerHTML='<div class="es"><div class="ei">📅</div><p>No events yet. Form submissions appear here automatically.</p></div>';return;}
+
+  const tierColor = {'Tier 1 ($0)':'#1a7a4a','Tier 2 (up to $20)':'var(--pending)','Tier 3 (above $20)':'var(--danger)'};
+  const yesNo = v => String(v).toLowerCase().includes('yes')?'✅':'❌';
+
+  el.innerHTML=filtered.map(ev=>`
+    <div class="bill-card" style="flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:.92rem">${esc(ev.title)}</div>
+          <div style="font-size:.73rem;color:#888;margin-top:3px">
+            ${esc(ev.province||'No province')} ${ev.chapter?'- '+esc(ev.chapter):''} 
+            ${ev.date?' - '+esc(String(ev.date)):''}
+            ${ev.format?' - '+esc(ev.format):''}
+          </div>
+          ${ev.location?`<div style="font-size:.73rem;color:#aaa;margin-top:2px">📍 ${esc(ev.location)}</div>`:''}
+          ${ev.organizer?`<div style="font-size:.73rem;color:#aaa;margin-top:2px">👤 ${esc(ev.organizer)} ${ev.organizerEmail?'('+esc(ev.organizerEmail)+')':''}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0">
+          <span class="bill-stage bs-${(ev.status||'').replace(/\s/g,'-')}" style="white-space:nowrap">${esc(ev.status||'Pending Review')}</span>
+          ${ev.fundingTier?`<span style="font-size:.7rem;font-weight:700;color:${tierColor[ev.fundingTier]||'#555'}">${esc(ev.fundingTier)}</span>`:''}
+        </div>
+      </div>
+      ${ev.summary?`<div style="font-size:.8rem;color:#555;padding:8px;background:#f7f8fd;border-radius:6px">${esc(ev.summary)}</div>`:''}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <div style="font-size:.75rem;padding:6px 10px;background:#f7f8fd;border-radius:6px">
+          <div style="color:#aaa;font-size:.65rem;text-transform:uppercase;font-weight:700;margin-bottom:2px">Parliament Vote</div>
+          ${yesNo(ev.parliamentVote||'')} ${esc(String(ev.parliamentVote||'Pending'))}
+        </div>
+        <div style="font-size:.75rem;padding:6px 10px;background:#f7f8fd;border-radius:6px">
+          <div style="color:#aaa;font-size:.65rem;text-transform:uppercase;font-weight:700;margin-bottom:2px">Chapter Approval</div>
+          ${yesNo(ev.chapterApproval||'')} ${esc(String(ev.chapterApproval||'Pending'))}
+        </div>
+        <div style="font-size:.75rem;padding:6px 10px;background:#f7f8fd;border-radius:6px">
+          <div style="color:#aaa;font-size:.65rem;text-transform:uppercase;font-weight:700;margin-bottom:2px">7 Days Notice</div>
+          ${yesNo(ev.submitted7Days||'')} ${esc(String(ev.submitted7Days||'Pending'))}
+        </div>
+      </div>
+      ${ev.budgetTotal?`<div style="font-size:.78rem">Budget: <strong>${esc(String(ev.budgetTotal))}</strong>${ev.audience?' - Audience: '+esc(ev.audience):''}</div>`:''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <select class="fsel" style="font-size:.72rem;padding:4px 8px" onchange="updateSheetEventStatus('${ev.id}',this.value)">
+          <option value="">Update status...</option>
+          <option value="Pending Review">Pending Review</option>
+          <option value="Approved - Tier 1">Approved - Tier 1</option>
+          <option value="Approved - Tier 2">Approved - Tier 2</option>
+          <option value="Approved - Tier 3">Approved - Tier 3</option>
+          <option value="Completed">Completed</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+        <button class="btn btn-d btn-sm" onclick="deleteSheetEvent('${ev.id}')">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+async function updateSheetEventStatus(id, status){
+  if(!status) return;
+  showOv('Updating event...');
+  try {
+    // Try Sheet first, then local
+    const inSheet = SHEET_EVENTS.find(e=>e.id===id);
+    if(inSheet){
+      await callScript({action:'updateEventStatus',id,status});
+      await fetchEvents();
+    } else {
+      const evs=getEvents();const idx=evs.findIndex(e=>e.id===id);
+      if(idx>=0){evs[idx].status=status;saveEvents(evs);}
+    }
+    showToast('Status updated.');
+  } catch(e){ showToast('Error updating.'); }
+  hideOv(); renderEvents();
+}
+
+async function deleteSheetEvent(id){
+  if(!confirm('Remove this event?')) return;
+  showOv('Removing...');
+  try {
+    const inSheet = SHEET_EVENTS.find(e=>e.id===id);
+    if(inSheet){
+      await callScript({action:'deleteEvent',id});
+      await fetchEvents();
+    } else {
+      saveEvents(getEvents().filter(e=>e.id!==id));
+    }
+    showToast('Removed.');
+  } catch(e){ showToast('Error.'); }
+  hideOv(); renderEvents();
+}
+
+function openAddEvent(){
+  editEventId=null;
+  document.getElementById('ev-modal-title').textContent='Log Event';
+  ['ev-title','ev-chapter','ev-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ev-prov-m').value='';
+  document.getElementById('ev-date').value='';
+  document.getElementById('ev-tier').value='Tier 1 ($0)';
+  document.getElementById('ev-status-m').value='Planning';
+  document.getElementById('ev-ph1').value='Pending';
+  document.getElementById('ev-ph2').value='Pending';
+  document.getElementById('ev-ph3').value='Pending';
+  document.getElementById('ev-attendance').value='';
+  document.getElementById('event-modal').classList.add('open');
+}
+
 function saveEvent(){
   const title=document.getElementById('ev-title').value.trim(),province=document.getElementById('ev-prov-m').value;
   if(!title||!province){showToast('Fill required fields.');return;}
-  const events=getEvents();
-  const ev={id:editEventId||'ev_'+Date.now(),title,province,chapter:document.getElementById('ev-chapter').value.trim(),date:document.getElementById('ev-date').value,tier:document.getElementById('ev-tier').value,status:document.getElementById('ev-status-m').value,phase1:document.getElementById('ev-ph1').value,phase2:document.getElementById('ev-ph2').value,phase3:document.getElementById('ev-ph3').value,attendance:document.getElementById('ev-attendance').value,desc:document.getElementById('ev-desc').value.trim()};
-  if(editEventId){const idx=events.findIndex(e=>e.id===editEventId);if(idx>=0)events[idx]=ev;}else{events.unshift(ev);addLog('Event logged: '+title);}
-  saveEvents(events);closeModal('event-modal');renderEvents();showToast('Event saved.');
+  const evs=getEvents();
+  const ev={id:editEventId||'ev_'+Date.now(),title,province,chapter:document.getElementById('ev-chapter').value.trim(),date:document.getElementById('ev-date').value,fundingTier:document.getElementById('ev-tier').value,status:document.getElementById('ev-status-m').value,parliamentVote:document.getElementById('ev-ph1').value,submitted7Days:document.getElementById('ev-ph2').value,chapterApproval:document.getElementById('ev-ph3').value,expectedAttendance:document.getElementById('ev-attendance').value,summary:document.getElementById('ev-desc').value.trim(),createdAt:new Date().toLocaleDateString('en-CA')};
+  if(editEventId){const idx=evs.findIndex(e=>e.id===editEventId);if(idx>=0)evs[idx]=ev;}else{evs.unshift(ev);addLog('Event logged: '+title);}
+  saveEvents(evs);closeModal('event-modal');renderEvents();showToast('Event saved.');
 }
-function deleteEvent(id){if(!confirm('Delete event?'))return;saveEvents(getEvents().filter(e=>e.id!==id));renderEvents();showToast('Deleted.');}
 
 // ── PARLIAMENT ────────────────────────────────────────────────────────────────
 let editBillId=null;
