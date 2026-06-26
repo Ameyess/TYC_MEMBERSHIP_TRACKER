@@ -796,7 +796,21 @@ const closeModal=id=>document.getElementById(id).classList.remove('open');
 const showToast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);};
 const showOv=msg=>{document.getElementById('omsg').textContent=msg||'Loading...';document.getElementById('overlay').classList.add('on');};
 const hideOv=()=>document.getElementById('overlay').classList.remove('on');
-const getReportsTo=role=>HIERARCHY[role]||'National Operations';
+const getReportsTo = role => {
+  if (!role) return 'N/A';
+  // Handle combined roles like "Municipal Director, School Chapter President"
+  // Use the first role listed
+  const primary = role.split(',')[0].trim();
+  // Direct match first
+  if (HIERARCHY[primary]) return HIERARCHY[primary];
+  // Partial match fallback - check if any hierarchy key is contained in the role string
+  for (const [key, val] of Object.entries(HIERARCHY)) {
+    if (primary.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(primary.toLowerCase())) {
+      return val;
+    }
+  }
+  return 'Provincial President';
+};
 
 function stageBadge(s){
   const map={Active:'ba',Inactive:'bi',Pending:'bp','Ops Review':'bp','Director Notified':'bp','Onboarding Call':'bp'};
