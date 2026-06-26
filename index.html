@@ -1080,18 +1080,46 @@ function renderAnalytics(){
     :'<p style="font-size:.8rem;color:#aaa">No events logged yet. Add events in the Events page.</p>';
 }
 
+function normalizeChapter(ch) {
+  if (!ch) return 'No Chapter';
+  const c = ch.toLowerCase();
+  // Sacred Heart variants
+  if (c.includes('sacred heart')) return 'Sacred Heart CHS';
+  // Dr. G.W. Williams variants
+  if (c.includes('g.w. williams') || c.includes('gw williams') || c.includes('g. w. williams')) return 'Dr. G.W. Williams SS';
+  // Dr. J.M. Denison variants
+  if (c.includes('denison')) return 'Dr. J.M. Denison SS';
+  // STFX
+  if (c.includes('stfx') || c.includes('st. francis xavier') || c.includes('st francis xavier')) return 'StFX University';
+  // Ecole Renaissance
+  if (c.includes('renaissance')) return 'Ecole Secondaire Catholique Renaissance';
+  // Jean-de-Brebeuf
+  if (c.includes('br') && c.includes('beuf') || c.includes('brébeuf') || c.includes('brebeuf')) return 'Collège Jean-de-Brébeuf';
+  // Holy Trinity
+  if (c.includes('holy trinity')) return 'Holy Trinity School';
+  // Cardinal Carter
+  if (c.includes('cardinal carter')) return 'Cardinal Carter CHS';
+  // Newmarket High
+  if (c.includes('newmarket')) return 'Newmarket High School';
+  // St. Joseph
+  if (c.includes('st. joseph') || c.includes('st joseph')) return 'St. Joseph High School';
+  // Strip year/grade info for cleaner display
+  return ch.split(',')[0].split('-')[0].trim().replace(/\s*(grade|gr|year)\s*\d+.*/i,'').trim();
+}
+
 function renderChapterBreakdown(){
   const pFilter=document.getElementById('an-prov-filter')?.value||'';
   const filtered=MB.filter(m=>m.status==='Active'&&(!pFilter||m.province===pFilter));
   const chapters={};
   filtered.forEach(m=>{
-    const key=(m.province||'Unknown')+' / '+(m.chapter||'No Chapter');
+    const normalizedChapter = normalizeChapter(m.chapter||'');
+    const key=(m.province||'Unknown')+' / '+normalizedChapter;
     chapters[key]=(chapters[key]||0)+1;
   });
   const maxC=Math.max(...Object.values(chapters),1);
   document.getElementById('an-chapters').innerHTML=Object.entries(chapters).length
     ?Object.entries(chapters).sort((a,b)=>b[1]-a[1]).map(([ch,c])=>`
-      <div class="bar-row"><span class="bar-label" style="width:200px">${ch}</span>
+      <div class="bar-row"><span class="bar-label" style="width:200px">${esc(ch)}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${(c/maxC*100).toFixed(0)}%"></div></div>
       <span class="bar-val">${c}</span></div>`).join('')
     :'<p style="font-size:.8rem;color:#aaa">No chapter data available.</p>';
