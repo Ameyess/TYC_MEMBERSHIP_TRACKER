@@ -602,7 +602,7 @@ const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbwDVDsNZTdzX_otH-oz
 const ADMIN_KEY   = 'tyc_admins_v4';
 const LOG_KEY     = 'tyc_log_v4';
 const URL_KEY     = 'tyc_sheet_url_v4';
-const EMAIL_KEY   = 'tyc_prov_emails_v2';
+const EMAIL_KEY   = 'tyc_prov_emails_v3'; // synced to Sheet
 const ISSUES_KEY  = 'tyc_issues_v1';
 const EVENTS_KEY  = 'tyc_events_v1';
 const BILLS_KEY   = 'tyc_bills_v1';
@@ -610,7 +610,46 @@ const TASKS_KEY   = 'tyc_tasks_v1';
 
 const PROVINCES = ['Ontario', 'Nova Scotia', 'Quebec', 'New Brunswick', 'Alberta', 'Saskatchewan'];
 
-const HIERARCHY = {"Chief Executive Officer": "Board / Founders", "Chief Operations Officer": "Chief Executive Officer", "Chief Informations Officer": "Chief Executive Officer", "Chief Communications Officer": "Chief Executive Officer", "Chief Development Officer": "Chief Executive Officer", "National Operations Member": "Chief Operations Officer", "National Informations Member": "Chief Informations Officer", "National Communications Member": "Chief Communications Officer", "Provincial President": "Chief Operations Officer", "Provincial Vice President": "Provincial President", "Provincial Director of Local Chapters": "Provincial President", "Provincial Director of Communications": "Provincial President", "Provincial Communications Member": "Provincial Director of Communications", "Provincial Director of Events": "Provincial President", "Provincial Events Member": "Provincial Director of Events", "Municipal Director": "Provincial Director of Local Chapters", "Municipal Secretary General": "Municipal Director", "Municipal Party Leader": "Municipal Director", "Municipal Director of Communications": "Municipal Director", "Municipal Finance Officer": "Municipal Director", "Municipal Human Resource Officer": "Municipal Director", "Municipal Councillor (Municipal General Member)": "Municipal Director", "School Chapter President": "Provincial Director of Local Chapters", "School Chapter Vice President": "School Chapter President", "School Chapter Secretary": "School Chapter President", "School Chapter Treasurer": "School Chapter President", "School Chapter Public Relations Officer": "School Chapter President", "School Chapter Event Coordinator": "School Chapter President", "School Chapter General Member": "School Chapter President", "CEO": "Board / Founders", "COO": "Chief Executive Officer", "CIO": "Chief Executive Officer", "CCO": "Chief Executive Officer", "Provincial President (legacy)": "Chief Operations Officer", "Municipal Executive": "Provincial Director of Local Chapters", "Member": "Municipal Director"};
+const HIERARCHY = {
+  "Chief Executive Officer": "Board / Founders",
+  "Chief Operations Officer": "Chief Executive Officer",
+  "Chief Informations Officer": "Chief Executive Officer",
+  "Chief Communications Officer": "Chief Executive Officer",
+  "Chief Development Officer": "Chief Executive Officer",
+  "National Operations Member": "Chief Operations Officer",
+  "National Informations Member": "Chief Informations Officer",
+  "National Communications Member": "Chief Communications Officer",
+  "Provincial President": "Chief Operations Officer",
+  "Provincial Vice President": "Provincial President",
+  "Provincial Director of Local Chapters": "Provincial President",
+  "Provincial Director of Municipalities": "Provincial President",
+  "Provincial Director of School Chapters": "Provincial President",
+  "Provincial Director of Communications": "Provincial President",
+  "Provincial Director of Events": "Provincial President",
+  "Provincial Communications Member": "Provincial Director of Communications",
+  "Provincial Events Member": "Provincial Director of Events",
+  "Municipal Director": "Provincial President",
+  "Municipal Secretary General": "Municipal Director",
+  "Municipal Party Leader": "Municipal Director",
+  "Municipal Director of Communications": "Municipal Director",
+  "Municipal Director of Operations": "Municipal Director",
+  "Municipal Finance Officer": "Municipal Director",
+  "Municipal Human Resource Officer": "Municipal Director",
+  "Municipal Councillor (Municipal General Member)": "Municipal Director",
+  "School Chapter President": "Provincial Director of Local Chapters",
+  "School Chapter Vice President": "School Chapter President",
+  "School Chapter Secretary": "School Chapter President",
+  "School Chapter Treasurer": "School Chapter President",
+  "School Chapter Public Relations Officer": "School Chapter President",
+  "School Chapter Event Coordinator": "School Chapter President",
+  "School Chapter General Member": "School Chapter President",
+  "CEO": "Board / Founders",
+  "COO": "Chief Executive Officer",
+  "CIO": "Chief Executive Officer",
+  "CCO": "Chief Executive Officer",
+  "Municipal Executive": "Provincial President",
+  "Member": "Municipal Director"
+};
 
 const ROLES_LIST = ['Chief Executive Officer', 'Chief Operations Officer', 'National Operations Member', 'Chief Informations Officer', 'National Informations Member', 'Chief Communications Officer', 'National Communications Member', 'Chief Development Officer', 'Provincial President', 'Provincial Vice President', 'Provincial Director of Local Chapters', 'Provincial Director of Communications', 'Provincial Communications Member', 'Provincial Director of Events', 'Provincial Events Member', 'Municipal Director', 'Municipal Secretary General', 'Municipal Party Leader', 'Municipal Director of Communications', 'Municipal Finance Officer', 'Municipal Human Resource Officer', 'Municipal Councillor (Municipal General Member)', 'School Chapter President', 'School Chapter Vice President', 'School Chapter Secretary', 'School Chapter Treasurer', 'School Chapter Public Relations Officer', 'School Chapter Event Coordinator', 'School Chapter General Member'];
 
@@ -697,6 +736,11 @@ async function doLogin(){
   document.getElementById('rbadge').textContent=m.role;
   document.getElementById('upill').textContent=m.display;
   showOv('Connecting to Google Sheets...');
+  // Load provincial emails from Sheet so all devices are in sync
+  try {
+    const sheetEmails = await loadProvEmailsFromSheet();
+    if(sheetEmails) saveProvEmails(sheetEmails);
+  } catch(e) { console.warn('Could not load emails'); }
   await fetchMembers();hideOv();renderAll();startAR();
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login-screen').style.display!=='none')doLogin();});
@@ -861,7 +905,15 @@ function openProfile(id){
   document.getElementById('prof-email').textContent=m.email||'N/A';
   document.getElementById('prof-discord').textContent=m.discord||'N/A';
   document.getElementById('prof-phone').textContent=m.phone||'N/A';
-  document.getElementById('prof-joined').textContent=m.joined||'N/A';
+  const rawJoined = m.joined||'';
+  let displayJoined = 'N/A';
+  if(rawJoined) {
+    try {
+      const d = new Date(rawJoined);
+      displayJoined = isNaN(d) ? rawJoined : d.toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'});
+    } catch(e) { displayJoined = rawJoined; }
+  }
+  document.getElementById('prof-joined').textContent = displayJoined;
   renderIssues(id);
   document.getElementById('profile-modal').classList.add('open');
 }
@@ -1229,7 +1281,30 @@ function renderEmailCenter(){
     pipeline.map(m=>`<option value="${m.id}">${esc(m.name)} - ${esc(m.province)}</option>`).join('');
 }
 
-function saveProvEmailField(key,val){const e=getProvEmails();e[key]=val.trim();saveProvEmails(e);}
+function saveProvEmailField(key,val){
+  const e=getProvEmails();
+  e[key]=val.trim();
+  saveProvEmails(e);
+  // Push to Sheet so all devices stay in sync
+  pushProvEmailsToSheet(e);
+}
+
+async function pushProvEmailsToSheet(emails) {
+  try {
+    await callScript({action:'saveProvEmails', data: JSON.stringify(emails)});
+  } catch(err) { console.warn('Could not sync emails to sheet:', err); }
+}
+
+async function loadProvEmailsFromSheet() {
+  try {
+    const data = await callScript({action:'getProvEmails'});
+    if(data && typeof data === 'object' && !Array.isArray(data) && data.emails) {
+      saveProvEmails(data.emails);
+      return data.emails;
+    }
+  } catch(err) { console.warn('Could not load emails from sheet:', err); }
+  return getProvEmails();
+}
 
 function openEmailCenter(id){
   nav('emails',document.querySelector('.ni[onclick*="emails"]'));
