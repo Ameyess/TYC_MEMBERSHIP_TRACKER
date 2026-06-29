@@ -396,9 +396,16 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
             </div>
             <p style="font-size:.75rem;font-weight:700;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Routing Email (to Provincial Director)</p>
             <div class="email-preview" id="routing-email-body" style="margin-bottom:12px"></div>
-            <div style="display:flex;gap:7px">
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
               <button class="btn btn-t btn-sm" onclick="copyEmail('routing')">Copy Routing Email</button>
               <button class="btn btn-o btn-sm" onclick="openMail('routing')">Open in Mail</button>
+            </div>
+            <div style="margin-top:16px;padding-top:16px;border-top:1px solid #eef0f8">
+              <button class="btn btn-p" style="width:100%;justify-content:center" onclick="sendBothEmails()">
+                Send Both Emails via Gmail
+              </button>
+              <p style="font-size:.72rem;color:#aaa;margin-top:6px;text-align:center">Sends from your Gmail account linked to Apps Script</p>
+              <div id="email-send-status" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:.8rem;font-weight:600;text-align:center"></div>
             </div>
           </div>
         </div>
@@ -877,7 +884,10 @@ function renderPipeline(){
       </div>
       <div class="ob-actions">
         ${ns?`<button class="btn btn-g btn-sm" onclick="advanceStage('${m.id}','${ns}')">Move to ${ns}</button>`:''}
-        ${(m.status==='Ops Review'||m.status==='Director Notified')?`<button class="btn btn-t btn-sm" onclick="openEmailCenter('${m.id}')">Email Director + Applicant</button>`:''}
+        ${(m.status==='Ops Review'||m.status==='Director Notified')?`
+          <button class="btn btn-t btn-sm" onclick="openEmailCenter('${m.id}')">Preview Emails</button>
+          <button class="btn btn-p btn-sm" onclick="quickSendEmails('${m.id}')">Send Both Emails</button>
+        `:''}
         ${m.status==='Onboarding Call'?`<button class="btn btn-p btn-sm" onclick="advanceStage('${m.id}','Active')">Mark Active</button>`:''}
         <button class="btn btn-o btn-sm" onclick="openProfile('${m.id}')">Profile</button>
         <button class="btn btn-d btn-sm" onclick="delMember('${m.id}')">Remove</button>
@@ -1394,10 +1404,17 @@ I'm Amayas, the Chief Operating Officer here at TYC. To help you get settled in,
 
 To give you a head start, we'd love for you to review a few key documents before that call. They'll give you a great foundation for our work:
 
-Constitution of The Young Constituents: https://docs.google.com/document/d/1MkBFUXw9UxXj3sJUhdvO83LxXlV5BUZVssPRskaZjfM/edit?usp=sharing
-TYC School Chapter Operational Framework: https://docs.google.com/document/d/1HEIIFEqdIXfn35NdK1gGg2daYwOWU4fmtb_1XEah5dU/edit?usp=sharing
-TYC Municipal Chapter Checklist: https://docs.google.com/document/d/1xxeb7IFjOmxPK7DQIK3S_QrWnFVgI7XO4Zfq5FKVvH0/edit?usp=sharing
-TYC Provincial Operational Framework: https://docs.google.com/document/d/1FBKTDVRxJzIysd_W72DzF_TQENkWuDnyESjoEvOboRs/edit?usp=sharing
+Constitution of The Young Constituents:
+https://docs.google.com/document/d/1MkBFUXw9UxXj3sJUhdvO83LxXlV5BUZVssPRskaZjfM/edit?usp=sharing
+
+TYC School Chapter Operational Framework:
+https://docs.google.com/document/d/1HEIIFEqdIXfn35NdK1gGg2daYwOWU4fmtb_1XEah5dU/edit?usp=sharing
+
+TYC Municipal Chapter Checklist:
+https://docs.google.com/document/d/1xxeb7IFjOmxPK7DQIK3S_QrWnFVgI7XO4Zfq5FKVvH0/edit?usp=sharing
+
+TYC Provincial Operational Framework:
+https://docs.google.com/document/d/1FBKTDVRxJzIysd_W72DzF_TQENkWuDnyESjoEvOboRs/edit?usp=sharing
 
 We'll consider you fully official once we wrap up your onboarding call, and once you've had a chance to dive into your specific role document and join the TYC Discord (just be sure to enable those required notifications so you don't miss anything!).
 
@@ -1455,6 +1472,54 @@ function openMail(type){
   window.open('mailto:'+to+'?subject='+subj+'&body='+body);
 }
 
+async function sendBothEmails() {
+  const memberId = document.getElementById('email-member-select').value;
+  if (!memberId) { showToast('Select a member first.'); return; }
+  const m = MB.find(x => x.id === memberId);
+  if (!m) { showToast('Member not found.'); return; }
+
+  const emails   = getProvEmails();
+  const dirName  = emails[m.province + '_name']  || m.province + ' Provincial President';
+  const dirEmail = emails[m.province + '_email'] || '';
+
+  const statusEl = document.getElementById('email-send-status');
+  statusEl.style.display = 'block';
+  statusEl.style.background = '#f7f8fd';
+  statusEl.style.color = 'var(--navy)';
+  statusEl.textContent = 'Sending emails...';
+
+  try {
+    const res = await callScript({
+      action: 'sendEmails',
+      data: JSON.stringify({ member: m, dirName, dirEmail })
+    });
+
+    if (res && res.success) {
+      statusEl.style.background = '#e8f7ee';
+      statusEl.style.color = 'var(--success)';
+      statusEl.textContent = 'Sent! Welcome email to ' + m.email + (res.dirSent ? ' and routing email to ' + dirName + '.' : '. No director email set.');
+      addLog('Emails sent for ' + m.name + ' (' + m.province + ')');
+
+      // Auto-advance to Director Notified if still in Ops Review
+      if (m.status === 'Ops Review') {
+        await callScript({ action: 'updateStatus', id: m.id, status: 'Director Notified' });
+        await fetchMembers();
+        renderCurrent();
+        showToast('Stage advanced to Director Notified.');
+      }
+    } else {
+      statusEl.style.background = '#fde8e8';
+      statusEl.style.color = 'var(--danger)';
+      statusEl.textContent = 'Error: ' + (res?.error || 'Unknown error. Check Apps Script permissions.');
+    }
+  } catch(e) {
+    statusEl.style.background = '#fde8e8';
+    statusEl.style.color = 'var(--danger)';
+    statusEl.textContent = 'Connection error. Make sure Apps Script is deployed and GmailApp is authorized.';
+    console.error(e);
+  }
+}
+
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
 function renderSettings(){
   document.getElementById('sheets-url-input').value=getURL();
@@ -1504,6 +1569,36 @@ function exportAnalytics(){
   dlCSV(rows,'tyc_analytics.csv');
 }
 function dlCSV(rows,fn){const c=rows.map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));a.download=fn;a.click();}
+
+async function quickSendEmails(id) {
+  const m = MB.find(x => x.id === id);
+  if (!m) return;
+  const emails   = getProvEmails();
+  const dirName  = emails[m.province+'_name']  || m.province+' Provincial President';
+  const dirEmail = emails[m.province+'_email'] || '';
+  showOv('Sending emails...');
+  try {
+    const res = await callScript({
+      action: 'sendEmails',
+      data: JSON.stringify({ member: m, dirName, dirEmail })
+    });
+    hideOv();
+    if (res && res.success) {
+      addLog('Emails sent for '+m.name);
+      showToast('Sent! Welcome to '+m.email+(res.dirSent?' + routing to '+dirName:' (no director email set)'));
+      if (m.status === 'Ops Review') {
+        await callScript({action:'updateStatus',id:m.id,status:'Director Notified'});
+        await fetchMembers(); renderCurrent();
+      }
+    } else {
+      showToast('Error: '+(res?.error||'Check Apps Script GmailApp permission'));
+    }
+  } catch(e) {
+    hideOv();
+    showToast('Connection error.');
+    console.error(e);
+  }
+}
 
 document.querySelectorAll('.moverlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 </script>
