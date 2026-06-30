@@ -684,16 +684,39 @@ const BILL_STAGES = ['Idea','Tabled','Debated','Passed','Rejected','Execution','
 
 const ROLE_TASKS = {"C-Suite": ["Review national member pipeline weekly", "Approve/reject Tier 3 event funding requests", "Publish quarterly national meeting notes", "Review and update TYC constitution annually", "Oversee provincial chapter consistency reports"], "Provincial President": ["Conduct onboarding calls for new chapter leads within 48hrs of routing", "Host bi-weekly meetings with Municipal and School Directors", "Submit monthly provincial report to National Operations", "Ensure all chapter events go through fiscal request form", "Maintain provincial member roster accuracy"], "Municipal Director": ["Table at least one bill per month in chapter parliament", "Submit Event Notification and Fiscal Request form 7 days before events", "Attend bi-weekly provincial meetings", "Submit monthly event summary to Provincial President", "Onboard new councillors within 1 week of approval"], "School Chapter President": ["Run bi-weekly chapter meetings", "Submit monthly chapter summary to Provincial Director of Local Chapters", "Ensure members understand parliamentary procedure", "Coordinate with Provincial Director on chapter growth"]};
 
+// Passwords are stored as SHA-256(salt + password) - never plaintext
+// To generate a new hash: run hashPassword('yourpassword') in console
+const SALT = 'TYC_2026_SEC_SALT_v1';
+
+async function hashPassword(pw) {
+  const msgBuffer = new TextEncoder().encode(SALT + pw);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Pre-hashed passwords (SHA-256 of SALT + password)
+// Default password is tyc2024! - change via Settings after first login
 const DEFAULT_ADMINS = [
-  {username:'xavier',password:'tyc2024!',role:'C-Suite',display:'Xavier Davis'},
-  {username:'amayas',password:'tyc2024!',role:'C-Suite',display:'Amayas Bhatia'}
+  {username:'xavier', passwordHash:'ad7c333028ec0efc10fe6800261c5a44d3020d95469f0a90db369e716c4a3c5d', role:'C-Suite', display:'Xavier Davis'},
+  {username:'amayas', passwordHash:'ad7c333028ec0efc10fe6800261c5a44d3020d95469f0a90db369e716c4a3c5d', role:'C-Suite', display:'Amayas Bhatia'}
 ];
 
-let CU=null, MB=[], editId=null, currentProfileId=null, refreshTimer=null, _lastHash='';
+let CU=null, MB=[], editId=null, currentProfileId=null, refreshTimer=null, _lastHash='', _loginAttempts=0;
 
 // ── STORAGE ───────────────────────────────────────────────────────────────────
-const getAdmins  = () => { try{return JSON.parse(localStorage.getItem(ADMIN_KEY))||DEFAULT_ADMINS;}catch(e){return DEFAULT_ADMINS;} };
-const saveAdmins = a => localStorage.setItem(ADMIN_KEY,JSON.stringify(a));
+// Admins loaded from Apps Script on login - localStorage only used as fallback cache
+let _adminCache = null;
+const getAdmins  = () => {
+  if (_adminCache) return _adminCache;
+  try { return JSON.parse(localStorage.getItem(ADMIN_KEY)) || DEFAULT_ADMINS; } catch(e) { return DEFAULT_ADMINS; }
+};
+const saveAdmins = a => {
+  _adminCache = a;
+  localStorage.setItem(ADMIN_KEY, JSON.stringify(a));
+  // Push to Sheet so admins sync across devices
+  callScript({action:'saveAdmins', data: JSON.stringify(a)}).catch(()=>{});
+};
 const getLog     = () => { try{return JSON.parse(localStorage.getItem(LOG_KEY))||[];}catch(e){return[];} };
 const addLog     = t => { const l=getLog();l.unshift({text:t,time:new Date().toISOString()});localStorage.setItem(LOG_KEY,JSON.stringify(l.slice(0,60))); };
 const getURL     = () => localStorage.getItem(URL_KEY)||DEFAULT_URL;
@@ -709,7 +732,18 @@ const getTasks   = () => { try{return JSON.parse(localStorage.getItem(TASKS_KEY)
 const saveTasks  = t => localStorage.setItem(TASKS_KEY,JSON.stringify(t));
 
 // ── FETCH ─────────────────────────────────────────────────────────────────────
+// Rate limiter: max 30 calls per 10 seconds
+const _callLog = [];
+const RATE_LIMIT = 30;
+const RATE_WINDOW = 10000;
+
 async function callScript(params) {
+  // Rate limiting
+  const now = Date.now();
+  while (_callLog.length && _callLog[0] < now - RATE_WINDOW) _callLog.shift();
+  if (_callLog.length >= RATE_LIMIT) throw new Error('Rate limit exceeded');
+  _callLog.push(now);
+
   const url = getURL()+'?'+new URLSearchParams(params).toString();
   const res = await fetch(url,{redirect:'follow',mode:'cors',credentials:'omit'});
   if(!res.ok) throw new Error('HTTP '+res.status);
@@ -732,9 +766,20 @@ async function fetchMembers() {
 }
 
 async function doRefresh(){showOv('Refreshing...');_lastHash='';await fetchMembers();hideOv();renderCurrent();showToast('Refreshed.');}
+const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // 8 hours
+let sessionExpiry = null;
+
 function startAR(){
   if(refreshTimer)clearInterval(refreshTimer);
+  // Set session expiry
+  sessionExpiry = Date.now() + SESSION_DURATION_MS;
   refreshTimer=setInterval(async()=>{
+    // Check session expiry
+    if(Date.now() > sessionExpiry){
+      showToast('Session expired. Please sign in again.');
+      setTimeout(doLogout, 2000);
+      return;
+    }
     const c=await fetchMembers();
     if(c)renderCurrent();
     if(curPage==='events') fetchEvents().then(()=>renderEvents());
@@ -753,8 +798,28 @@ function setSS(state,msg){
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 async function doLogin(){
   const u=document.getElementById('lu').value.trim(),p=document.getElementById('lp').value;
-  const m=getAdmins().find(a=>a.username===u&&a.password===p);
-  if(!m){document.getElementById('lerr').style.display='block';return;}
+  if(!u||!p){document.getElementById('lerr').style.display='block';return;}
+  const inputHash = await hashPassword(p);
+  const admins = getAdmins();
+  // Support both hashed (passwordHash) and legacy plaintext (password) during migration
+  const m=admins.find(a=>a.username===u&&(
+    (a.passwordHash && a.passwordHash===inputHash) ||
+    (a.password && a.password===p) // legacy fallback - removed after first save
+  ));
+  if(!m){
+    _loginAttempts++;
+    if(_loginAttempts >= 5){
+      document.getElementById('lerr').textContent='Too many failed attempts. Wait 30 seconds.';
+      document.getElementById('lerr').style.display='block';
+      document.querySelector('.lbtn').disabled=true;
+      setTimeout(()=>{_loginAttempts=0;document.querySelector('.lbtn').disabled=false;document.getElementById('lerr').style.display='none';},30000);
+      return;
+    }
+    document.getElementById('lerr').textContent='Incorrect username or password.';
+    document.getElementById('lerr').style.display='block';
+    return;
+  }
+  _loginAttempts=0;
   CU=m;
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='block';
@@ -1523,10 +1588,16 @@ async function sendBothEmails() {
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
 function renderSettings(){
   document.getElementById('sheets-url-input').value=getURL();
+  // Only C-Suite can see admin management
+  const adminSection = document.getElementById('admin-list').closest('.card');
+  if(CU?.role !== 'C-Suite'){
+    adminSection.innerHTML='<p style="font-size:.82rem;color:#aaa">Admin account management is restricted to C-Suite.</p>';
+    return;
+  }
   document.getElementById('admin-list').innerHTML=getAdmins().map((a,i)=>`
     <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#f7f8fd;border-radius:8px">
       <div><div style="font-weight:600;font-size:.83rem">${esc(a.display)} <span class="rc" style="font-size:.63rem">${esc(a.role)}</span></div>
-      <div style="font-size:.72rem;color:#888">@${esc(a.username)}</div></div>
+      <div style="font-size:.72rem;color:#888">@${esc(a.username)} &bull; ••••••••</div></div>
       ${getAdmins().length>1?`<button class="btn btn-d btn-sm" onclick="removeAdmin(${i})">Remove</button>`:'<span style="font-size:.7rem;color:#aaa">Only admin</span>'}
     </div>`).join('');
 }
