@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <style>
-:root{--navy:#08003F;--gold:#FFA300;--teal:#249EBF;--light:#E0E5F4;--white:#fff;--danger:#c0392b;--success:#1a7a4a;--pending:#e67e22;--inactive:#7f8c8d;--sw:250px;--radius:10px;--shadow:0 2px 12px rgba(8,0,63,.10)}
+:root{--navy:#08003F;--sidebar:#070026;--gold:#FFA300;--teal:#249EBF;--light:#E0E5F4;--white:#fff;--danger:#c0392b;--success:#1a7a4a;--pending:#e67e22;--inactive:#7f8c8d;--sw:250px;--radius:10px;--shadow:0 2px 12px rgba(8,0,63,.10)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Montserrat',sans-serif;background:#f2f4fb;color:var(--navy);min-height:100vh}
 
@@ -30,7 +30,7 @@ body{font-family:'Montserrat',sans-serif;background:#f2f4fb;color:var(--navy);mi
 
 /* APP */
 #app{display:none;min-height:100vh}
-.sidebar{width:var(--sw);background:var(--navy);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+.sidebar{width:var(--sw);background:#070026;position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100;overflow-y:auto}
 .sb-logo{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0}
 .sb-logo img{width:100px;border-radius:8px}
 .sb-logo span{display:block;font-size:.6rem;color:var(--gold);font-weight:700;letter-spacing:.1em;margin-top:4px;text-transform:uppercase}
@@ -172,6 +172,126 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
 .es{text-align:center;padding:50px 20px;color:#bbb}.es .ei{font-size:2.5rem;margin-bottom:10px}
 .li{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #eef0f8}
 .ldot{width:9px;height:9px;border-radius:50%;background:var(--teal);margin-top:3px;flex-shrink:0}
+
+/* ── MOBILE RESPONSIVE ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root { --sw: 0px; }
+
+  /* Sidebar becomes a slide-in drawer */
+  .sidebar {
+    width: 260px !important;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 200;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+  }
+
+  /* Overlay behind open sidebar */
+  #mob-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 199;
+  }
+  #mob-overlay.show { display: block; }
+
+  /* Main takes full width */
+  .main { margin-left: 0 !important; }
+
+  /* Topbar gets hamburger */
+  .topbar { padding: 0 14px; gap: 8px; }
+  .topbar h1 { font-size: .95rem; }
+  #mob-menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  #mob-menu-btn span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--navy);
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  /* Pages */
+  .page { padding: 16px 14px; }
+
+  /* Stats grid - 2 cols on mobile */
+  .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sc .val { font-size: 1.5rem; }
+
+  /* Two col becomes single col */
+  .two-col { grid-template-columns: 1fr; }
+  .analytics-grid { grid-template-columns: 1fr; }
+
+  /* Tables scroll horizontally */
+  .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 600px; }
+
+  /* Modal full screen on mobile */
+  .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0;
+    border-radius: 14px 14px 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    max-height: 90vh;
+  }
+  .moverlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  /* Form grid single col */
+  .fgrid { grid-template-columns: 1fr; }
+  .fg.full { grid-column: 1; }
+
+  /* Toolbar stacks */
+  .toolbar { flex-direction: column; }
+  .sbox, .fsel { width: 100%; }
+
+  /* Bill card stacks */
+  .bill-card { flex-direction: column; }
+
+  /* Email center stacks */
+  #page-emails > div { grid-template-columns: 1fr !important; }
+
+  /* Pipeline cards */
+  .ob-actions { flex-wrap: wrap; }
+  .ob-actions .btn { font-size: .7rem; padding: 4px 10px; }
+
+  /* Topbar right */
+  .tr { gap: 6px; }
+  .rbadge { display: none; }
+
+  /* Profile modal */
+  .profile-header { flex-direction: column; align-items: center; text-align: center; }
+  #page-settings > div { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .stats { grid-template-columns: 1fr 1fr; }
+  .topbar h1 { font-size: .85rem; }
+  .btn { font-size: .75rem; padding: 7px 12px; }
+}
+
+@media (min-width: 769px) {
+  #mob-menu-btn { display: none; }
+  #mob-overlay { display: none !important; }
+}
 </style>
 </head>
 <body>
@@ -239,6 +359,9 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
 
   <div class="main">
     <div class="topbar">
+      <button id="mob-menu-btn" onclick="toggleMobMenu()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
       <h1 id="ptitle">Dashboard</h1>
       <div class="tr">
         <span class="rbadge" id="rbadge">C-Suite</span>
@@ -246,6 +369,7 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
         <button class="btn btn-o btn-sm" onclick="doRefresh()">Refresh</button>
       </div>
     </div>
+    <div id="mob-overlay" onclick="toggleMobMenu()"></div>
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
@@ -847,6 +971,23 @@ async function doLogin(){
   await fetchMembers();hideOv();renderAll();startAR();
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login-screen').style.display!=='none')doLogin();});
+function toggleMobMenu() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('mob-overlay').classList.toggle('show');
+}
+
+// Close sidebar when nav item clicked on mobile
+document.querySelectorAll && document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.ni').forEach(ni => {
+    ni.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        document.querySelector('.sidebar').classList.remove('open');
+        document.getElementById('mob-overlay').classList.remove('show');
+      }
+    });
+  });
+});
+
 function doLogout(){CU=null;MB=[];if(refreshTimer)clearInterval(refreshTimer);document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';document.getElementById('lu').value='';document.getElementById('lp').value='';}
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
