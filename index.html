@@ -166,6 +166,16 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
 .si{width:100%;padding:9px 12px;border:1.5px solid #dde3f5;border-radius:8px;font-family:inherit;font-size:.83rem;outline:none;margin-bottom:6px}
 .si:focus{border-color:var(--teal)}
 
+/* Toggle switch */
+.tgl-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.tgl{position:relative;display:inline-block;width:44px;height:25px;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0}
+.tgl-slider{position:absolute;cursor:pointer;inset:0;background:#dde3f5;border-radius:999px;transition:.2s}
+.tgl-slider:before{content:"";position:absolute;height:19px;width:19px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tgl input:checked + .tgl-slider{background:var(--success)}
+.tgl input:checked + .tgl-slider:before{transform:translateX(19px)}
+.tgl input:disabled + .tgl-slider{opacity:.5;cursor:not-allowed}
+
 /* Toast */
 #toast{position:fixed;bottom:22px;right:22px;background:var(--navy);color:#fff;padding:11px 18px;border-radius:10px;font-size:.83rem;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:2000;transform:translateY(80px);transition:transform .3s;pointer-events:none}
 #toast.show{transform:translateY(0)}
@@ -666,6 +676,20 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
           <p style="font-size:.82rem;color:#666;margin-bottom:10px">Get a free key at <a href="https://aistudio.google.com" target="_blank" style="color:var(--teal)">aistudio.google.com</a>. Stored only in your browser.</p>
           <input class="settings-input" id="gemini-key-input" type="password" placeholder="AIza...">
           <button class="btn btn-p btn-sm" onclick="saveGeminiKey()">Save Key</button>
+        </div>
+        <div class="card">
+          <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">Auto-Send Onboarding Emails</h3>
+          <p style="font-size:.82rem;color:#666;margin-bottom:12px">When ON, the welcome email and provincial director routing email are sent automatically the moment someone submits the member intake form, no manual click needed. Flip it off any time to go back to sending them yourself from the Pipeline.</p>
+          <div class="tgl-row">
+            <div>
+              <div id="auto-send-label" style="font-weight:600;font-size:.83rem">Loading...</div>
+              <div style="font-size:.72rem;color:#888">Applies to every new submission, for everyone using the portal.</div>
+            </div>
+            <label class="tgl">
+              <input type="checkbox" id="auto-send-toggle" onchange="toggleAutoSend()" disabled>
+              <span class="tgl-slider"></span>
+            </label>
+          </div>
         </div>
         <div class="card">
           <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">Google Sheets Connection</h3>
@@ -1870,6 +1894,7 @@ function renderSettings(){
   const gkInput=document.getElementById('gemini-key-input');
   if(gkInput) gkInput.value=gk?'••••••••••••••••':'';
   document.getElementById('sheets-url-input').value=getURL();
+  loadAutoSendState();
   // Only C-Suite can see admin management
   const adminSection = document.getElementById('admin-list').closest('.card');
   if(CU?.role !== 'C-Suite'){
@@ -1884,6 +1909,48 @@ function renderSettings(){
     </div>`).join('');
 }
 function saveSheetURL(){localStorage.setItem(URL_KEY,document.getElementById('sheets-url-input').value.trim());showToast('URL saved.');doRefresh();}
+
+async function loadAutoSendState(){
+  const labelEl=document.getElementById('auto-send-label');
+  const toggleEl=document.getElementById('auto-send-toggle');
+  if(!labelEl||!toggleEl) return;
+  labelEl.textContent='Loading...';
+  toggleEl.disabled=true;
+  try{
+    const res=await callScript({action:'getAutoSend'});
+    const on=!!(res&&res.enabled);
+    toggleEl.checked=on;
+    labelEl.textContent=on?'Auto-send is ON':'Auto-send is OFF';
+    toggleEl.disabled=false;
+  }catch(e){
+    labelEl.textContent='Could not load setting';
+    toggleEl.disabled=false;
+  }
+}
+
+async function toggleAutoSend(){
+  const toggleEl=document.getElementById('auto-send-toggle');
+  const labelEl=document.getElementById('auto-send-label');
+  const desired=toggleEl.checked;
+  toggleEl.disabled=true;
+  labelEl.textContent='Saving...';
+  try{
+    const res=await callScript({action:'saveAutoSend',value:desired?'true':'false'});
+    if(res&&res.success){
+      labelEl.textContent=desired?'Auto-send is ON':'Auto-send is OFF';
+      showToast(desired?'Auto-send turned on. New applicants get emailed instantly.':'Auto-send turned off. Back to sending manually.');
+    }else{
+      toggleEl.checked=!desired;
+      labelEl.textContent=!desired?'Auto-send is ON':'Auto-send is OFF';
+      showToast('Error: '+(res?.error||'Could not save setting.'));
+    }
+  }catch(e){
+    toggleEl.checked=!desired;
+    labelEl.textContent=!desired?'Auto-send is ON':'Auto-send is OFF';
+    showToast('Connection error. Setting not saved.');
+  }
+  toggleEl.disabled=false;
+}
 function saveGeminiKey(){const k=document.getElementById('gemini-key-input').value.trim();if(k){localStorage.setItem(GEMINI_KEY,k);showToast('Gemini key saved.');}else{localStorage.removeItem(GEMINI_KEY);showToast('Gemini key cleared.');}}
 function openAdminModal(){['a-user','a-pass','a-disp'].forEach(id=>document.getElementById(id).value='');document.getElementById('a-role').value='C-Suite';document.getElementById('adm-modal').classList.add('open');}
 function saveAdmin(){const u=document.getElementById('a-user').value.trim(),p=document.getElementById('a-pass').value,r=document.getElementById('a-role').value,d=document.getElementById('a-disp').value.trim();if(!u||!p||!d){showToast('Fill all fields.');return;}const a=getAdmins();a.push({username:u,password:p,role:r,display:d});saveAdmins(a);closeModal('adm-modal');renderSettings();showToast('Admin added.');}
