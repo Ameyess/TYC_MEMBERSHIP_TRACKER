@@ -342,6 +342,15 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
       <div class="ni" onclick="nav('tasks',this)">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Role Tasks
       </div>
+      <div class="nsec">People</div>
+      <div class="ni" onclick="nav('birthdays',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="17"/></svg>
+        Birthdays
+      </div>
+      <div class="ni" onclick="nav('feedback',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Member Feedback
+      </div>
       <div class="nsec">Admin</div>
       <div class="ni" onclick="nav('emails',this)">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email Center
@@ -463,6 +472,113 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
       </div>
     </div>
 
+    <!-- BIRTHDAYS -->
+    <div class="page" id="page-birthdays">
+      <div class="sh"><h2>Birthday Tracker</h2>
+        <button class="btn btn-p btn-sm" onclick="checkUpcomingBirthdays()">Check Upcoming</button>
+      </div>
+      <p style="font-size:.82rem;color:#555;margin-bottom:20px;line-height:1.6">
+        Birthday emails are sent automatically at 8am ET via the Apps Script daily trigger.
+        Members need a birthday in their profile (column 12 in the Members sheet).
+        You can also send a birthday email manually from any member's profile.
+      </p>
+
+      <!-- Stats row -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px">
+        <div class="card" style="text-align:center">
+          <div style="font-size:.7rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Birthdays This Month</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--navy)" id="bd-this-month">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:.7rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Upcoming (7 days)</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--gold)" id="bd-upcoming">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:.7rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Members with Birthday</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--teal)" id="bd-total">—</div>
+        </div>
+      </div>
+
+      <!-- Upcoming birthdays table -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="sh"><h2>Upcoming Birthdays</h2></div>
+        <div id="bd-upcoming-list"></div>
+      </div>
+
+      <!-- All birthdays by month -->
+      <div class="card">
+        <div class="sh"><h2>All Birthdays by Month</h2>
+          <select class="fsel" id="bd-month-filter" onchange="renderBirthdays()">
+            <option value="">All Months</option>
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div id="bd-all-list"></div>
+      </div>
+    </div>
+
+    <!-- FEEDBACK -->
+    <div class="page" id="page-feedback">
+      <div class="sh"><h2>Member Feedback</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-o btn-sm" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSffVO8NR03vSxvIVmwelhYl2nmkuDwh0MRO_kwzXNq8FchWWw/viewform','_blank')">Share Form</button>
+          <button class="btn btn-t btn-sm" onclick="loadFeedback()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <!-- Gemini AI Summary Card -->
+      <div style="background:linear-gradient(135deg,#0d0060 0%,#1a0080 50%,#249EBF 100%);border-radius:var(--radius);padding:22px 24px;margin-bottom:20px;color:#fff">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.7">Gemini AI</span>
+            </div>
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:4px">AI Feedback Summary</h3>
+            <p style="font-size:.8rem;opacity:.7;margin-bottom:0">Gemini analyzes all feedback responses and identifies key themes, issues, and actionable improvements.</p>
+          </div>
+          <button class="btn btn-sm" onclick="generateGeminiSummary()" id="gemini-btn"
+            style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);flex-shrink:0;backdrop-filter:blur(4px)">
+            Generate Summary
+          </button>
+        </div>
+        <div id="gemini-output" style="display:none;margin-top:18px;padding-top:18px;border-top:1px solid rgba(255,255,255,.15)">
+          <div id="gemini-text" style="font-size:.85rem;line-height:1.8;opacity:.92;white-space:pre-wrap"></div>
+        </div>
+        <div id="gemini-loading" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15);font-size:.83rem;opacity:.7">
+          <span>Analyzing feedback...</span>
+        </div>
+        <div id="gemini-key-missing" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15)">
+          <p style="font-size:.82rem;opacity:.8">To enable AI summaries, add your Gemini API key in <strong>Settings</strong>.</p>
+        </div>
+      </div>
+
+      <!-- Score Summary -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px" id="fb-scores"></div>
+
+      <!-- Province filter -->
+      <div style="margin-bottom:16px">
+        <select class="fsel" id="fb-prov-filter" onchange="renderFeedbackPage()" style="width:200px">
+          <option value="">All Provinces</option>
+          <option>Ontario</option><option>Nova Scotia</option><option>Quebec</option>
+          <option>New Brunswick</option><option>Alberta</option><option>Saskatchewan</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="fb-responses-grid">
+        <div class="card"><div class="sh"><h2>What to Improve</h2></div><div id="fb-improve"></div></div>
+        <div class="card"><div class="sh"><h2>What's Working</h2></div><div id="fb-continue"></div></div>
+        <div class="card"><div class="sh"><h2>Leadership Feedback</h2></div><div id="fb-leadership"></div></div>
+        <div class="card"><div class="sh"><h2>Motivation Factors</h2></div><div id="fb-motivation"></div></div>
+      </div>
+    </div>
+
+    <!-- EVENTS -->
     <!-- EVENTS -->
     <div class="page" id="page-events">
       <div class="sh"><h2>Event Tracker</h2><button class="btn btn-p" onclick="openAddEvent()">+ Log Event</button></div>
@@ -545,6 +661,12 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div style="max-width:560px;display:flex;flex-direction:column;gap:18px">
+        <div class="card">
+          <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">Gemini AI Key</h3>
+          <p style="font-size:.82rem;color:#666;margin-bottom:10px">Get a free key at <a href="https://aistudio.google.com" target="_blank" style="color:var(--teal)">aistudio.google.com</a>. Stored only in your browser.</p>
+          <input class="settings-input" id="gemini-key-input" type="password" placeholder="AIza...">
+          <button class="btn btn-p btn-sm" onclick="saveGeminiKey()">Save Key</button>
+        </div>
         <div class="card">
           <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">Google Sheets Connection</h3>
           <input class="si" id="sheets-url-input" placeholder="https://script.google.com/macros/s/...">
@@ -741,6 +863,7 @@ const LOG_KEY     = 'tyc_log_v4';
 const URL_KEY     = 'tyc_sheet_url_v4';
 const EMAIL_KEY   = 'tyc_prov_emails_v3'; // synced to Sheet
 const ISSUES_KEY  = 'tyc_issues_v1';
+const GEMINI_KEY  = 'tyc_gemini_key';
 const EVENTS_KEY  = 'tyc_events_v1';
 const BILLS_KEY   = 'tyc_bills_v1';
 const TASKS_KEY   = 'tyc_tasks_v1';
@@ -991,7 +1114,7 @@ document.querySelectorAll && document.addEventListener('DOMContentLoaded', () =>
 function doLogout(){CU=null;MB=[];if(refreshTimer)clearInterval(refreshTimer);document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';document.getElementById('lu').value='';document.getElementById('lp').value='';}
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
-const TITLES={dashboard:'Dashboard',pipeline:'Onboarding Pipeline',members:'All Members',analytics:'Analytics',events:'Events',parliament:'Parliament',tasks:'Role Tasks',emails:'Email Center',settings:'Settings'};
+const TITLES={dashboard:'Dashboard',pipeline:'Onboarding Pipeline',members:'All Members',analytics:'Analytics',events:'Events',parliament:'Parliament',tasks:'Role Tasks',emails:'Email Center',settings:'Settings',birthdays:'Birthday Tracker',feedback:'Member Feedback'};
 let curPage='dashboard';
 function nav(id,el){
   curPage=id;
@@ -1008,6 +1131,8 @@ function renderCurrent(){
   else if(curPage==='members')renderMembers();
   else if(curPage==='analytics')renderAnalytics();
   else if(curPage==='events'){fetchEvents().then(()=>renderEvents());}
+  else if(curPage==='birthdays'){renderBirthdays();}
+  else if(curPage==='feedback'){loadFeedback();}
   else if(curPage==='parliament')renderBills();
   else if(curPage==='tasks')renderTasks();
   else if(curPage==='emails')renderEmailCenter();
@@ -1741,6 +1866,9 @@ async function sendBothEmails() {
 
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
 function renderSettings(){
+  const gk=localStorage.getItem(GEMINI_KEY)||'';
+  const gkInput=document.getElementById('gemini-key-input');
+  if(gkInput) gkInput.value=gk?'••••••••••••••••':'';
   document.getElementById('sheets-url-input').value=getURL();
   // Only C-Suite can see admin management
   const adminSection = document.getElementById('admin-list').closest('.card');
@@ -1756,6 +1884,7 @@ function renderSettings(){
     </div>`).join('');
 }
 function saveSheetURL(){localStorage.setItem(URL_KEY,document.getElementById('sheets-url-input').value.trim());showToast('URL saved.');doRefresh();}
+function saveGeminiKey(){const k=document.getElementById('gemini-key-input').value.trim();if(k){localStorage.setItem(GEMINI_KEY,k);showToast('Gemini key saved.');}else{localStorage.removeItem(GEMINI_KEY);showToast('Gemini key cleared.');}}
 function openAdminModal(){['a-user','a-pass','a-disp'].forEach(id=>document.getElementById(id).value='');document.getElementById('a-role').value='C-Suite';document.getElementById('adm-modal').classList.add('open');}
 function saveAdmin(){const u=document.getElementById('a-user').value.trim(),p=document.getElementById('a-pass').value,r=document.getElementById('a-role').value,d=document.getElementById('a-disp').value.trim();if(!u||!p||!d){showToast('Fill all fields.');return;}const a=getAdmins();a.push({username:u,password:p,role:r,display:d});saveAdmins(a);closeModal('adm-modal');renderSettings();showToast('Admin added.');}
 function removeAdmin(i){if(!confirm('Remove?'))return;const a=getAdmins();a.splice(i,1);saveAdmins(a);renderSettings();showToast('Removed.');}
@@ -1826,6 +1955,262 @@ async function quickSendEmails(id) {
 }
 
 document.querySelectorAll('.moverlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// ── BIRTHDAY TRACKER ──────────────────────────────────────────────────────────
+const MONTHS = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function parseBirthday(bdStr) {
+  if (!bdStr) return null;
+  const s = String(bdStr).trim();
+  if (!s) return null;
+  const months = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12,jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  const parts = s.toLowerCase().replace(/[,\/\-]/g,' ').split(/\s+/).filter(Boolean);
+  if (!parts.length) return null;
+  if (months[parts[0]]) return {month:months[parts[0]], day:parseInt(parts[1]||1), year:parseInt(parts[2]||0)};
+  const n1=parseInt(parts[0]),n2=parseInt(parts[1]||1);
+  if (!isNaN(n1)&&!isNaN(n2)) return {month:n1,day:n2,year:parseInt(parts[2]||0)};
+  return null;
+}
+
+function daysUntilBirthday(bd) {
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  let next = new Date(thisYear, bd.month-1, bd.day);
+  if (next < now) next = new Date(thisYear+1, bd.month-1, bd.day);
+  return Math.ceil((next-now)/(1000*60*60*24));
+}
+
+function renderBirthdays() {
+  const members = MB.filter(m=>m.birthday&&parseBirthday(m.birthday));
+  const now = new Date();
+  const curMonth = now.getMonth()+1;
+  const monthFilter = parseInt(document.getElementById('bd-month-filter')?.value||0);
+
+  const withBd = members.map(m=>({...m,bd:parseBirthday(m.birthday),daysUntil:daysUntilBirthday(parseBirthday(m.birthday))}));
+  const thisMonth = withBd.filter(m=>m.bd.month===curMonth);
+  const upcoming = withBd.filter(m=>m.daysUntil<=7).sort((a,b)=>a.daysUntil-b.daysUntil);
+
+  document.getElementById('bd-this-month').textContent = thisMonth.length;
+  document.getElementById('bd-upcoming').textContent = upcoming.length;
+  document.getElementById('bd-total').textContent = withBd.length;
+
+  // Upcoming list
+  const upEl = document.getElementById('bd-upcoming-list');
+  if (!upcoming.length) {
+    upEl.innerHTML = '<div class="es"><div class="ei">🎂</div><p>No birthdays in the next 7 days.</p></div>';
+  } else {
+    upEl.innerHTML = `<table><thead><tr><th>Member</th><th>Birthday</th><th>Days Away</th><th>Province</th><th>Action</th></tr></thead><tbody>
+      ${upcoming.map(m=>`<tr>
+        <td><div class="tdn">${esc(m.name)}</div><div class="tds">${esc(m.email)}</div></td>
+        <td>${MONTHS[m.bd.month]} ${m.bd.day}${m.bd.year?' '+m.bd.year:''}</td>
+        <td><span style="font-weight:700;color:${m.daysUntil===0?'var(--gold)':'var(--teal)'}">${m.daysUntil===0?'TODAY!':m.daysUntil+' days'}</span></td>
+        <td>${esc(m.province||'')}</td>
+        <td><button class="btn btn-g btn-sm" onclick="sendBirthdayEmailManual('${m.id}')">Send Email</button></td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  }
+
+  // All by month
+  const allEl = document.getElementById('bd-all-list');
+  const filtered = monthFilter ? withBd.filter(m=>m.bd.month===monthFilter) : withBd;
+  const byMonth = {};
+  filtered.forEach(m=>{ const k=m.bd.month; if(!byMonth[k])byMonth[k]=[]; byMonth[k].push(m); });
+
+  if (!Object.keys(byMonth).length) {
+    allEl.innerHTML = '<p style="font-size:.82rem;color:#aaa;padding:20px 0">No members with birthdays found. Make sure birthday is captured in the Members sheet (column 12).</p>';
+    return;
+  }
+
+  allEl.innerHTML = Object.keys(byMonth).sort((a,b)=>a-b).map(month=>`
+    <div style="margin-bottom:18px">
+      <div style="font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #eef0f8">${MONTHS[month]}</div>
+      ${byMonth[month].sort((a,b)=>a.bd.day-b.bd.day).map(m=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f5">
+          <div>
+            <div style="font-weight:600;font-size:.85rem">${esc(m.name)}</div>
+            <div style="font-size:.72rem;color:#888">${esc(m.role||'')} - ${esc(m.province||'')}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:.82rem;color:#555">${MONTHS[m.bd.month]} ${m.bd.day}${m.bd.year?' '+m.bd.year:''}</span>
+            <button class="btn btn-o btn-sm" onclick="sendBirthdayEmailManual('${m.id}')">Send Email</button>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function checkUpcomingBirthdays() {
+  renderBirthdays();
+  const upcoming = MB.filter(m=>{
+    const bd=parseBirthday(m.birthday);
+    return bd && daysUntilBirthday(bd)<=7;
+  });
+  showToast(upcoming.length ? upcoming.length+' birthday(s) in the next 7 days!' : 'No upcoming birthdays in 7 days.');
+}
+
+async function sendBirthdayEmailManual(id) {
+  const m = MB.find(x=>x.id===id);
+  if (!m) return;
+  if (!confirm('Send birthday email to '+m.name+' ('+m.email+')?')) return;
+  showOv('Sending birthday email...');
+  try {
+    const res = await callScript({action:'sendBirthdayEmail', data:JSON.stringify({id:m.id})});
+    hideOv();
+    if (res&&res.success) { addLog('Birthday email sent to '+m.name); showToast('Birthday email sent to '+m.name+'!'); }
+    else showToast('Error: '+(res?.error||'Check Apps Script GmailApp permission'));
+  } catch(e) { hideOv(); showToast('Connection error.'); }
+}
+
+// ── FEEDBACK + GEMINI ─────────────────────────────────────────────────────────
+let FB_DATA = [];
+
+async function loadFeedback() {
+  setSS('sync','Loading feedback...');
+  try {
+    const data = await callScript({action:'getFeedback'});
+    if (Array.isArray(data)) { FB_DATA = data; setSS('ok','Connected to Google Sheets'); }
+  } catch(e) { setSS('err','Could not load feedback'); }
+  renderFeedbackPage();
+}
+
+function renderFeedbackPage() {
+  const pf = document.getElementById('fb-prov-filter')?.value||'';
+  const data = pf ? FB_DATA.filter(r=>r.province===pf) : FB_DATA;
+
+  if (!data.length) {
+    document.getElementById('fb-scores').innerHTML = '';
+    ['fb-improve','fb-continue','fb-leadership','fb-motivation'].forEach(id=>{
+      document.getElementById(id).innerHTML = '<p style="font-size:.8rem;color:#aaa">No responses yet.</p>';
+    });
+    return;
+  }
+
+  // Score cards
+  const scoreFields = [
+    {key:'overallExp',label:'Overall Exp'},
+    {key:'engaged',label:'Engagement'},
+    {key:'motivated',label:'Motivation'},
+    {key:'supported',label:'Feels Supported'},
+  ];
+  const avg = key => {
+    const vals = data.map(r=>parseFloat(r[key])).filter(v=>!isNaN(v)&&v>0);
+    return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '—';
+  };
+  const scoreColor = v => v>=7?'var(--success)':v>=5?'var(--pending)':'var(--danger)';
+
+  document.getElementById('fb-scores').innerHTML = scoreFields.map(f=>{
+    const v=avg(f.key); const n=parseFloat(v);
+    return `<div class="card" style="text-align:center">
+      <div style="font-size:.68rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${f.label}</div>
+      <div style="font-size:2rem;font-weight:800;color:${isNaN(n)?'#aaa':scoreColor(n)}">${v}</div>
+      <div style="font-size:.72rem;color:#aaa">/10 · ${data.length} responses</div>
+    </div>`;
+  }).join('');
+
+  // Text responses
+  const renderTexts = (id, key) => {
+    const items = data.map(r=>r[key]).filter(Boolean);
+    document.getElementById(id).innerHTML = items.length
+      ? items.slice(0,6).map(t=>`<div style="padding:8px 12px;background:#f7f8fd;border-radius:6px;font-size:.81rem;margin-bottom:7px;border-left:3px solid var(--teal)">${esc(t)}</div>`).join('')
+      : '<p style="font-size:.8rem;color:#aaa">No responses.</p>';
+  };
+  renderTexts('fb-improve','improve');
+  renderTexts('fb-continue','continueDoing');
+  renderTexts('fb-leadership','leadershipDiff');
+
+  // Motivation factors
+  const factors = {};
+  data.forEach(r=>{ if(r.motivationFactor) String(r.motivationFactor).split(',').forEach(f=>{ const k=f.trim(); if(k) factors[k]=(factors[k]||0)+1; }); });
+  const maxF = Math.max(...Object.values(factors),1);
+  document.getElementById('fb-motivation').innerHTML = Object.entries(factors).length
+    ? Object.entries(factors).sort((a,b)=>b[1]-a[1]).map(([label,c])=>`
+        <div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:3px"><span>${esc(label)}</span><strong>${c}</strong></div>
+          <div style="background:#eef0f8;border-radius:4px;height:6px"><div style="background:var(--gold);width:${(c/maxF*100).toFixed(0)}%;height:6px;border-radius:4px"></div></div>
+        </div>`).join('')
+    : '<p style="font-size:.8rem;color:#aaa">No data.</p>';
+}
+
+async function generateGeminiSummary() {
+  const geminiKey = localStorage.getItem(GEMINI_KEY)||'';
+  if (!geminiKey) {
+    document.getElementById('gemini-key-missing').style.display='block';
+    document.getElementById('gemini-output').style.display='none';
+    return;
+  }
+  if (!FB_DATA.length) { showToast('No feedback data loaded yet.'); return; }
+
+  document.getElementById('gemini-btn').disabled=true;
+  document.getElementById('gemini-btn').textContent='Generating...';
+  document.getElementById('gemini-loading').style.display='block';
+  document.getElementById('gemini-output').style.display='none';
+  document.getElementById('gemini-key-missing').style.display='none';
+
+  // Build context for Gemini
+  const avg = key => {
+    const vals=FB_DATA.map(r=>parseFloat(r[key])).filter(v=>!isNaN(v)&&v>0);
+    return vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):'N/A';
+  };
+
+  const improveTexts = FB_DATA.map(r=>r.improve).filter(Boolean).slice(0,20).join(' | ');
+  const continueTexts = FB_DATA.map(r=>r.continueDoing).filter(Boolean).slice(0,20).join(' | ');
+  const leadershipTexts = FB_DATA.map(r=>r.leadershipDiff).filter(Boolean).slice(0,20).join(' | ');
+  const otherTexts = FB_DATA.map(r=>r.other).filter(Boolean).slice(0,10).join(' | ');
+
+  const prompt = `You are analyzing member feedback for The Young Constituents (TYC), a Canadian youth governance organization with chapters across 6 provinces.
+
+QUANTITATIVE SCORES (out of 10, ${FB_DATA.length} total responses):
+- Overall Experience: ${avg('overallExp')}/10
+- Engagement in Role: ${avg('engaged')}/10
+- Motivation: ${avg('motivated')}/10
+- Energy Level: ${avg('energized')}/10
+- Feeling Supported by Leadership: ${avg('supported')}/10
+- Direction Clarity: ${avg('direction')}/10
+- Role & Structure Clarity: ${avg('roleClarity')}/10
+- Communication Effectiveness: ${avg('commEffective')}/10
+- Meeting Usefulness: ${avg('meetings')}/10
+
+OPEN RESPONSES:
+What members want improved: ${improveTexts||'None'}
+What members want continued: ${continueTexts||'None'}
+Leadership feedback: ${leadershipTexts||'None'}
+Other comments: ${otherTexts||'None'}
+
+Please provide a concise, actionable summary for TYC leadership with:
+1. TOP 3 ISSUES (most urgent problems to address)
+2. TOP 3 STRENGTHS (what is working well)
+3. SPECIFIC ACTION ITEMS (concrete steps leadership should take in the next 30 days)
+4. RISK FLAGS (anything that could cause member attrition if not addressed)
+
+Keep the tone professional but direct. Format clearly with headers. Be specific and reference the actual data.`;
+
+  try {
+    const res = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+geminiKey,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+      }
+    );
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (text) {
+      document.getElementById('gemini-text').textContent=text;
+      document.getElementById('gemini-output').style.display='block';
+    } else {
+      document.getElementById('gemini-text').textContent='No response from Gemini. Check your API key.';
+      document.getElementById('gemini-output').style.display='block';
+    }
+  } catch(e) {
+    document.getElementById('gemini-text').textContent='Error connecting to Gemini: '+e.message;
+    document.getElementById('gemini-output').style.display='block';
+  }
+
+  document.getElementById('gemini-loading').style.display='none';
+  document.getElementById('gemini-btn').disabled=false;
+  document.getElementById('gemini-btn').textContent='Regenerate Summary';
+}
+
 </script>
 </body>
 </html>
