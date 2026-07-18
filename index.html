@@ -714,6 +714,12 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
           <label style="font-size:.72rem;color:#888;display:block;margin-bottom:4px">#badges Webhook URL</label>
           <input class="si" id="badge-webhook-url" placeholder="https://discord.com/api/webhooks/...">
           <div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee">
+            <label style="font-size:.72rem;color:#888;display:block;margin-bottom:4px">Relay Worker URL <span style="font-weight:400;color:#aaa">(required — Discord blocks direct Apps Script requests)</span></label>
+            <input class="si" id="badge-relay-url" placeholder="https://tyc-discord-relay.yourname.workers.dev">
+            <label style="font-size:.72rem;color:#888;display:block;margin-bottom:4px">Relay Secret</label>
+            <input class="si" id="badge-relay-secret" type="password" placeholder="Leave blank to keep current secret">
+          </div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee">
             <label style="font-size:.72rem;color:#888;display:block;margin-bottom:4px">Role IDs per tier</label>
             <input class="si" id="badge-role-New Member" placeholder="New Member role ID">
             <input class="si" id="badge-role-Established Member" placeholder="Established Member role ID">
@@ -2022,6 +2028,8 @@ async function loadDiscordBadgeConfig(){
     labelEl.textContent=on?'Badge automation is ON':'Badge automation is OFF';
     document.getElementById('badge-guild-id').value=res?.guildId||'';
     document.getElementById('badge-webhook-url').value=res?.webhookUrl||'';
+    document.getElementById('badge-relay-url').value=res?.relayUrl||'';
+    document.getElementById('badge-relay-secret').placeholder = res?.hasRelaySecret ? 'Saved (leave blank to keep it)' : 'Leave blank to keep current secret';
     const tokenInput=document.getElementById('badge-bot-token');
     tokenInput.placeholder = res?.hasToken ? 'Saved (leave blank to keep it)' : 'AIza... / your bot token';
     BADGE_TIER_KEYS.forEach(k=>{
@@ -2044,6 +2052,8 @@ async function saveDiscordBadgeConfig(){
     enabled: document.getElementById('badge-auto-toggle').checked,
     guildId: document.getElementById('badge-guild-id').value.trim(),
     webhookUrl: document.getElementById('badge-webhook-url').value.trim(),
+    relayUrl: document.getElementById('badge-relay-url').value.trim(),
+    relaySecret: document.getElementById('badge-relay-secret').value.trim(),
     botToken: document.getElementById('badge-bot-token').value.trim(),
     roles: roles
   };
@@ -2052,6 +2062,7 @@ async function saveDiscordBadgeConfig(){
     if(res&&res.success){
       showToast('Badge automation settings saved.');
       document.getElementById('badge-bot-token').value='';
+      document.getElementById('badge-relay-secret').value='';
       loadDiscordBadgeConfig();
     }else{
       showToast('Error: '+(res?.error||'Could not save.'));
