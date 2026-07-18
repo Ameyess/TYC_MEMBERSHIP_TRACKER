@@ -441,7 +441,7 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
           <option value="">All Provinces</option><option>Ontario</option><option>Nova Scotia</option><option>Quebec</option><option>New Brunswick</option><option>Alberta</option><option>Saskatchewan</option>
         </select>
         <select class="fsel" id="mfrole" onchange="renderMembers()">
-          <option value="">All Roles</option><option>Chief Executive Officer</option><option>Chief Operations Officer</option><option>National Operations Member</option><option>Chief Informations Officer</option><option>National Informations Member</option><option>Chief Communications Officer</option><option>National Communications Member</option><option>Chief Development Officer</option><option>Provincial President</option><option>Provincial Vice President</option><option>Provincial Director of Local Chapters</option><option>Provincial Director of Communications</option><option>Provincial Communications Member</option><option>Provincial Director of Events</option><option>Provincial Events Member</option><option>Municipal Director</option><option>Municipal Secretary General</option><option>Municipal Party Leader</option><option>Municipal Director of Communications</option><option>Municipal Finance Officer</option><option>Municipal Human Resource Officer</option><option>Municipal Councillor (Municipal General Member)</option><option>School Chapter President</option><option>School Chapter Vice President</option><option>School Chapter Secretary</option><option>School Chapter Treasurer</option><option>School Chapter Public Relations Officer</option><option>School Chapter Event Coordinator</option><option>School Chapter General Member</option>
+          <option value="">All Roles</option><option>Executive Director</option><option>National Director of Operations</option><option>National Operations Member</option><option>National Director of Finance & Technology</option><option>National Informations Member</option><option>National Director of Digital Media & Content Production</option><option>National Communications Member</option><option>National Director of Programs & Chapters</option><option>National Director of Communications</option><option>Provincial President</option><option>Provincial Vice President</option><option>Provincial Director of Local Chapters</option><option>Provincial Director of Communications</option><option>Provincial Communications Member</option><option>Provincial Director of Events</option><option>Provincial Events Member</option><option>Municipal Director</option><option>Municipal Secretary General</option><option>Municipal Party Leader</option><option>Municipal Director of Communications</option><option>Municipal Finance Officer</option><option>Municipal Human Resource Officer</option><option>Municipal Councillor (Municipal General Member)</option><option>School Chapter President</option><option>School Chapter Vice President</option><option>School Chapter Secretary</option><option>School Chapter Treasurer</option><option>School Chapter Public Relations Officer</option><option>School Chapter Event Coordinator</option><option>School Chapter General Member</option>
         </select>
         <select class="fsel" id="mfstatus" onchange="renderMembers()">
           <option value="">All Statuses</option>
@@ -674,7 +674,7 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
         <div class="card">
           <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">Gemini AI Key</h3>
           <p style="font-size:.82rem;color:#666;margin-bottom:10px">Get a free key at <a href="https://aistudio.google.com" target="_blank" style="color:var(--teal)">aistudio.google.com</a>. Stored only in your browser.</p>
-          <input class="settings-input" id="gemini-key-input" type="password" placeholder="AIza...">
+          <input class="settings-input" id="gemini-key-input" type="password" placeholder="AIza..." oninput="this.dataset.masked='false'">
           <button class="btn btn-p btn-sm" onclick="saveGeminiKey()">Save Key</button>
         </div>
         <div class="card">
@@ -734,13 +734,14 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
       </div>
       <div class="fg"><label>Chapter / School</label><input id="f-chapter"></div>
       <div class="fg"><label>Role *</label>
-        <select id="f-role" onchange="updateReportsTo()"><option value="">Select...</option><option>Chief Executive Officer</option><option>Chief Operations Officer</option><option>National Operations Member</option><option>Chief Informations Officer</option><option>National Informations Member</option><option>Chief Communications Officer</option><option>National Communications Member</option><option>Chief Development Officer</option><option>Provincial President</option><option>Provincial Vice President</option><option>Provincial Director of Local Chapters</option><option>Provincial Director of Communications</option><option>Provincial Communications Member</option><option>Provincial Director of Events</option><option>Provincial Events Member</option><option>Municipal Director</option><option>Municipal Secretary General</option><option>Municipal Party Leader</option><option>Municipal Director of Communications</option><option>Municipal Finance Officer</option><option>Municipal Human Resource Officer</option><option>Municipal Councillor (Municipal General Member)</option><option>School Chapter President</option><option>School Chapter Vice President</option><option>School Chapter Secretary</option><option>School Chapter Treasurer</option><option>School Chapter Public Relations Officer</option><option>School Chapter Event Coordinator</option><option>School Chapter General Member</option></select>
+        <select id="f-role" onchange="updateReportsTo()"><option value="">Select...</option><option>Executive Director</option><option>National Director of Operations</option><option>National Operations Member</option><option>National Director of Finance & Technology</option><option>National Informations Member</option><option>National Director of Digital Media & Content Production</option><option>National Communications Member</option><option>National Director of Programs & Chapters</option><option>National Director of Communications</option><option>Provincial President</option><option>Provincial Vice President</option><option>Provincial Director of Local Chapters</option><option>Provincial Director of Communications</option><option>Provincial Communications Member</option><option>Provincial Director of Events</option><option>Provincial Events Member</option><option>Municipal Director</option><option>Municipal Secretary General</option><option>Municipal Party Leader</option><option>Municipal Director of Communications</option><option>Municipal Finance Officer</option><option>Municipal Human Resource Officer</option><option>Municipal Councillor (Municipal General Member)</option><option>School Chapter President</option><option>School Chapter Vice President</option><option>School Chapter Secretary</option><option>School Chapter Treasurer</option><option>School Chapter Public Relations Officer</option><option>School Chapter Event Coordinator</option><option>School Chapter General Member</option></select>
       </div>
       <div class="fg"><label>Reports To</label><input id="f-reports" placeholder="Auto-filled" readonly style="background:#f7f8fd"></div>
       <div class="fg"><label>Pipeline Stage</label>
         <select id="f-status"><option>Pending</option><option>Ops Review</option><option>Director Notified</option><option>Onboarding Call</option><option>Active</option><option>Inactive</option></select>
       </div>
       <div class="fg"><label>Joined</label><input id="f-joined" type="date"></div>
+      <div class="fg"><label>Birthday</label><input id="f-birthday" type="date"></div>
       <div class="fg full"><label>Notes</label><textarea id="f-notes" rows="2" style="resize:vertical"></textarea></div>
     </div>
     <div class="mactions">
@@ -770,6 +771,7 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
       <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Discord</div><div style="font-size:.85rem" id="prof-discord"></div></div>
       <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Phone</div><div style="font-size:.85rem" id="prof-phone"></div></div>
       <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Joined</div><div style="font-size:.85rem" id="prof-joined"></div></div>
+      <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Birthday</div><div style="font-size:.85rem" id="prof-birthday"></div></div>
     </div>
     <div style="border-top:1px solid #eef0f8;padding-top:16px">
       <div class="sh"><h2 style="font-size:.88rem">Issues Log</h2>
@@ -895,26 +897,32 @@ const TASKS_KEY   = 'tyc_tasks_v1';
 const PROVINCES = ['Ontario', 'Nova Scotia', 'Quebec', 'New Brunswick', 'Alberta', 'Saskatchewan'];
 
 const HIERARCHY = {
+  "Executive Director": "Board / Founders",
   "Chief Executive Officer": "Board / Founders",
-  "Chief Operations Officer": "Chief Executive Officer",
-  "Chief Operating Officer": "Chief Executive Officer",
-  "Chief Communications Officer": "Chief Executive Officer",
-  "Chief Development Officer": "Chief Executive Officer",
-  "Chief Informations Officer": "Chief Executive Officer",
-  "Chief Information Officer": "Chief Executive Officer",
-  "National Chief Information Officer": "Chief Executive Officer",
-  "COO": "Chief Executive Officer",
+  "National Director of Operations": "Executive Director",
+  "Chief Operations Officer": "Executive Director",
+  "Chief Operating Officer": "Executive Director",
+  "National Director of Digital Media & Content Production": "Executive Director",
+  "Chief Communications Officer": "Executive Director",
+  "National Director of Programs & Chapters": "Executive Director",
+  "Chief Development Officer": "Executive Director",
+  "National Director of Finance & Technology": "Executive Director",
+  "Chief Informations Officer": "Executive Director",
+  "Chief Information Officer": "Executive Director",
+  "National Chief Information Officer": "Executive Director",
+  "National Director of Communications": "Executive Director",
+  "COO": "Executive Director",
   "CEO": "Board / Founders",
-  "CCO": "Chief Executive Officer",
-  "CDO": "Chief Executive Officer",
-  "CIO": "Chief Executive Officer",
+  "CCO": "Executive Director",
+  "CDO": "Executive Director",
+  "CIO": "Executive Director",
   "Speaker of the House": "National Parliament",
-  "National Prime Minister": "Chief Executive Officer",
-  "Finance & Technology Team Member": "Chief Informations Officer",
-  "National Operations Member": "Chief Operations Officer",
-  "National Informations Member": "Chief Informations Officer",
-  "National Communications Member": "Chief Communications Officer",
-  "Provincial President": "Chief Operations Officer",
+  "National Prime Minister": "Executive Director",
+  "Finance & Technology Team Member": "National Director of Finance & Technology",
+  "National Operations Member": "National Director of Operations",
+  "National Informations Member": "National Director of Finance & Technology",
+  "National Communications Member": "National Director of Digital Media & Content Production",
+  "Provincial President": "National Director of Operations",
   "Vice President": "Provincial President",
   "Provincial Vice President": "Provincial President",
   "Provincial Director of Local Chapters": "Provincial President",
@@ -953,7 +961,7 @@ const HIERARCHY = {
   "Member": "Committee Chair"
 };
 
-const ROLES_LIST = ['Chief Executive Officer', 'Chief Operations Officer', 'National Operations Member', 'Chief Informations Officer', 'National Informations Member', 'Chief Communications Officer', 'National Communications Member', 'Chief Development Officer', 'Provincial President', 'Provincial Vice President', 'Provincial Director of Local Chapters', 'Provincial Director of Communications', 'Provincial Communications Member', 'Provincial Director of Events', 'Provincial Events Member', 'Municipal Director', 'Municipal Secretary General', 'Municipal Party Leader', 'Municipal Director of Communications', 'Municipal Finance Officer', 'Municipal Human Resource Officer', 'Municipal Councillor (Municipal General Member)', 'School Chapter President', 'School Chapter Vice President', 'School Chapter Secretary', 'School Chapter Treasurer', 'School Chapter Public Relations Officer', 'School Chapter Event Coordinator', 'School Chapter General Member'];
+const ROLES_LIST = ['Executive Director', 'National Director of Operations', 'National Operations Member', 'National Director of Finance & Technology', 'National Informations Member', 'National Director of Digital Media & Content Production', 'National Communications Member', 'National Director of Programs & Chapters', 'National Director of Communications', 'Provincial President', 'Provincial Vice President', 'Provincial Director of Local Chapters', 'Provincial Director of Communications', 'Provincial Communications Member', 'Provincial Director of Events', 'Provincial Events Member', 'Municipal Director', 'Municipal Secretary General', 'Municipal Party Leader', 'Municipal Director of Communications', 'Municipal Finance Officer', 'Municipal Human Resource Officer', 'Municipal Councillor (Municipal General Member)', 'School Chapter President', 'School Chapter Vice President', 'School Chapter Secretary', 'School Chapter Treasurer', 'School Chapter Public Relations Officer', 'School Chapter Event Coordinator', 'School Chapter General Member'];
 
 const STAGES = ['Pending','Ops Review','Director Notified','Onboarding Call','Active'];
 const STAGE_LABELS = {"Pending":"1 - Form Submitted","Ops Review":"2 - Ops Review","Director Notified":"3 - Director Notified","Onboarding Call":"4 - Onboarding Call","Active":"5 - Active","Inactive":"Inactive"};
@@ -1324,6 +1332,8 @@ function openProfile(id){
     } catch(e) { displayJoined = rawJoined; }
   }
   document.getElementById('prof-joined').textContent = displayJoined;
+  const bd = m.birthday ? parseBirthday(m.birthday) : null;
+  document.getElementById('prof-birthday').textContent = bd ? (MONTHS[bd.month]+' '+bd.day+(bd.year?' '+bd.year:'')) : 'N/A';
   renderIssues(id);
   document.getElementById('profile-modal').classList.add('open');
 }
@@ -1768,7 +1778,7 @@ Hi ${m.name},
 
 Welcome to The Young Constituents! We are absolutely thrilled to have you on board with us.
 
-I'm Amayas, the Chief Operating Officer here at TYC. To help you get settled in, your next step is to connect with your Provincial Director, ${dirName}. They will be reaching out soon to schedule your formal onboarding call, where they'll walk you through our structure, chat about your role, and make sure you have everything you need to hit the ground running.
+I'm Amayas, the National Director of Operations here at TYC. To help you get settled in, your next step is to connect with your Provincial Director, ${dirName}. They will be reaching out soon to schedule your formal onboarding call, where they'll walk you through our structure, chat about your role, and make sure you have everything you need to hit the ground running.
 
 To give you a head start, we'd love for you to review a few key documents before that call. They'll give you a great foundation for our work:
 
@@ -1792,7 +1802,7 @@ Welcome to the team, and I look forward to working with you!
 
 Warm regards,
 Amayas
-Chief Operating Officer, The Young Constituents`;
+National Director of Operations, The Young Constituents`;
 
   const routingEmail=`To: ${dirEmail}
 Subject: New TYC Applicant Routing - ${m.name} (${m.province})
@@ -1819,7 +1829,7 @@ Please confirm receipt of this routing.
 
 Best regards,
 Amayas
-Chief Operating Officer, The Young Constituents`;
+National Director of Operations, The Young Constituents`;
 
   document.getElementById('welcome-email-body').textContent=welcomeEmail;
   document.getElementById('routing-email-body').textContent=routingEmail;
@@ -1892,7 +1902,10 @@ async function sendBothEmails() {
 function renderSettings(){
   const gk=localStorage.getItem(GEMINI_KEY)||'';
   const gkInput=document.getElementById('gemini-key-input');
-  if(gkInput) gkInput.value=gk?'••••••••••••••••':'';
+  if(gkInput){
+    gkInput.value=gk?'••••••••••••••••':'';
+    gkInput.dataset.masked = gk ? 'true' : 'false';
+  }
   document.getElementById('sheets-url-input').value=getURL();
   loadAutoSendState();
   // Only C-Suite can see admin management
@@ -1951,20 +1964,30 @@ async function toggleAutoSend(){
   }
   toggleEl.disabled=false;
 }
-function saveGeminiKey(){const k=document.getElementById('gemini-key-input').value.trim();if(k){localStorage.setItem(GEMINI_KEY,k);showToast('Gemini key saved.');}else{localStorage.removeItem(GEMINI_KEY);showToast('Gemini key cleared.');}}
+function saveGeminiKey(){
+  const input=document.getElementById('gemini-key-input');
+  if(input.dataset.masked==='true'){showToast('Key unchanged.');return;}
+  const k=input.value.trim();
+  if(k){localStorage.setItem(GEMINI_KEY,k);showToast('Gemini key saved.');}
+  else{localStorage.removeItem(GEMINI_KEY);showToast('Gemini key cleared.');}
+  renderSettings();
+}
 function openAdminModal(){['a-user','a-pass','a-disp'].forEach(id=>document.getElementById(id).value='');document.getElementById('a-role').value='C-Suite';document.getElementById('adm-modal').classList.add('open');}
 function saveAdmin(){const u=document.getElementById('a-user').value.trim(),p=document.getElementById('a-pass').value,r=document.getElementById('a-role').value,d=document.getElementById('a-disp').value.trim();if(!u||!p||!d){showToast('Fill all fields.');return;}const a=getAdmins();a.push({username:u,password:p,role:r,display:d});saveAdmins(a);closeModal('adm-modal');renderSettings();showToast('Admin added.');}
 function removeAdmin(i){if(!confirm('Remove?'))return;const a=getAdmins();a.splice(i,1);saveAdmins(a);renderSettings();showToast('Removed.');}
 
 // ── MEMBER CRUD ───────────────────────────────────────────────────────────────
 function updateReportsTo(){const role=document.getElementById('f-role').value;document.getElementById('f-reports').value=getReportsTo(role);}
-function openAdd(){editId=null;document.getElementById('modal-title').textContent='Add Member';['f-name','f-email','f-phone','f-discord','f-chapter','f-notes'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-prov').value='';document.getElementById('f-role').value='';document.getElementById('f-reports').value='';document.getElementById('f-status').value='Pending';document.getElementById('f-joined').value=new Date().toISOString().split('T')[0];document.getElementById('mem-modal').classList.add('open');}
-function openEdit(id){const m=MB.find(x=>x.id===id);if(!m)return;editId=id;document.getElementById('modal-title').textContent='Edit Member';document.getElementById('f-name').value=m.name||'';document.getElementById('f-email').value=m.email||'';document.getElementById('f-phone').value=m.phone||'';document.getElementById('f-discord').value=m.discord||'';document.getElementById('f-prov').value=m.province||'';document.getElementById('f-chapter').value=m.chapter||'';document.getElementById('f-role').value=m.role||'';document.getElementById('f-reports').value=getReportsTo(m.role||'');document.getElementById('f-status').value=m.status||'Pending';document.getElementById('f-joined').value=m.joined||'';document.getElementById('f-notes').value=m.notes||'';document.getElementById('mem-modal').classList.add('open');}
+function openAdd(){editId=null;document.getElementById('modal-title').textContent='Add Member';['f-name','f-email','f-phone','f-discord','f-chapter','f-notes','f-birthday'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-prov').value='';document.getElementById('f-role').value='';document.getElementById('f-reports').value='';document.getElementById('f-status').value='Pending';document.getElementById('f-joined').value=new Date().toISOString().split('T')[0];document.getElementById('mem-modal').classList.add('open');}
+function openEdit(id){const m=MB.find(x=>x.id===id);if(!m)return;editId=id;document.getElementById('modal-title').textContent='Edit Member';document.getElementById('f-name').value=m.name||'';document.getElementById('f-email').value=m.email||'';document.getElementById('f-phone').value=m.phone||'';document.getElementById('f-discord').value=m.discord||'';document.getElementById('f-prov').value=m.province||'';document.getElementById('f-chapter').value=m.chapter||'';document.getElementById('f-role').value=m.role||'';document.getElementById('f-reports').value=getReportsTo(m.role||'');document.getElementById('f-status').value=m.status||'Pending';document.getElementById('f-joined').value=m.joined||'';document.getElementById('f-notes').value=m.notes||'';
+  const bd=m.birthday?parseBirthday(m.birthday):null;
+  document.getElementById('f-birthday').value=(bd&&bd.year)?(String(bd.year).padStart(4,'0')+'-'+String(bd.month).padStart(2,'0')+'-'+String(bd.day).padStart(2,'0')):'';
+  document.getElementById('mem-modal').classList.add('open');}
 
 async function saveMember(){
   const name=document.getElementById('f-name').value.trim(),email=document.getElementById('f-email').value.trim(),role=document.getElementById('f-role').value,province=document.getElementById('f-prov').value;
   if(!name||!email||!role||!province){showToast('Fill all required fields.');return;}
-  const data={id:editId||('mbr_'+Date.now()),name,email,discord:document.getElementById('f-discord').value.trim(),province,role,phone:document.getElementById('f-phone').value.trim(),chapter:document.getElementById('f-chapter').value.trim(),status:document.getElementById('f-status').value,notes:document.getElementById('f-notes').value.trim(),discordSynced:'No',joined:document.getElementById('f-joined').value||new Date().toLocaleDateString('en-CA')};
+  const data={id:editId||('mbr_'+Date.now()),name,email,discord:document.getElementById('f-discord').value.trim(),province,role,phone:document.getElementById('f-phone').value.trim(),chapter:document.getElementById('f-chapter').value.trim(),status:document.getElementById('f-status').value,notes:document.getElementById('f-notes').value.trim(),discordSynced:'No',joined:document.getElementById('f-joined').value||new Date().toLocaleDateString('en-CA'),birthday:document.getElementById('f-birthday').value||''};
   closeModal('mem-modal');showOv('Saving...');
   try{const r=await callScript({action:'upsert',data:JSON.stringify(data)});if(r&&r.success){addLog((editId?'Edited':'Added')+': '+name);showToast('Saved.');}else showToast('Error: '+(r?.error||'Unknown'));}
   catch(e){showToast('Connection error.');}
@@ -2034,6 +2057,10 @@ function parseBirthday(bdStr) {
   const parts = s.toLowerCase().replace(/[,\/\-]/g,' ').split(/\s+/).filter(Boolean);
   if (!parts.length) return null;
   if (months[parts[0]]) return {month:months[parts[0]], day:parseInt(parts[1]||1), year:parseInt(parts[2]||0)};
+  // ISO format from <input type="date">: yyyy mm dd (first part is a 4-digit year)
+  if (parts.length >= 3 && parts[0].length === 4 && !isNaN(parseInt(parts[0]))) {
+    return {year:parseInt(parts[0]), month:parseInt(parts[1]), day:parseInt(parts[2])};
+  }
   const n1=parseInt(parts[0]),n2=parseInt(parts[1]||1);
   if (!isNaN(n1)&&!isNaN(n2)) return {month:n1,day:n2,year:parseInt(parts[2]||0)};
   return null;
@@ -2041,10 +2068,10 @@ function parseBirthday(bdStr) {
 
 function daysUntilBirthday(bd) {
   const now = new Date();
-  const thisYear = now.getFullYear();
-  let next = new Date(thisYear, bd.month-1, bd.day);
-  if (next < now) next = new Date(thisYear+1, bd.month-1, bd.day);
-  return Math.ceil((next-now)/(1000*60*60*24));
+  const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let next = new Date(todayMid.getFullYear(), bd.month-1, bd.day);
+  if (next < todayMid) next = new Date(todayMid.getFullYear()+1, bd.month-1, bd.day);
+  return Math.round((next-todayMid)/(1000*60*60*24));
 }
 
 function renderBirthdays() {
@@ -2252,7 +2279,7 @@ Keep the tone professional but direct. Format clearly with headers. Be specific 
 
   try {
     const res = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+geminiKey,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+geminiKey,
       {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -2260,6 +2287,15 @@ Keep the tone professional but direct. Format clearly with headers. Be specific 
       }
     );
     const data = await res.json();
+    if (!res.ok) {
+      const apiErr = data?.error?.message || ('HTTP '+res.status);
+      document.getElementById('gemini-text').textContent='Gemini API error: '+apiErr;
+      document.getElementById('gemini-output').style.display='block';
+      document.getElementById('gemini-loading').style.display='none';
+      document.getElementById('gemini-btn').disabled=false;
+      document.getElementById('gemini-btn').textContent='Regenerate Summary';
+      return;
+    }
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (text) {
       document.getElementById('gemini-text').textContent=text;
