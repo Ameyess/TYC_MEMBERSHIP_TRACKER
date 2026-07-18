@@ -2072,6 +2072,10 @@ function parseBirthday(bdStr) {
   }
   const n1=parseInt(parts[0]),n2=parseInt(parts[1]||1);
   if (!isNaN(n1)&&!isNaN(n2)) return {month:n1,day:n2,year:parseInt(parts[2]||0)};
+  // Last resort: verbose JS Date.toString() junk like
+  // "Mon Jul 20 2009 00:00:00 GMT-0400 (Eastern Daylight Time)"
+  const asDate = new Date(s);
+  if (!isNaN(asDate.getTime())) return {month:asDate.getMonth()+1, day:asDate.getDate(), year:asDate.getFullYear()};
   return null;
 }
 
