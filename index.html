@@ -676,7 +676,8 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
           <p style="font-size:.82rem;color:#666;margin-bottom:10px">Get a key at <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--teal)">openrouter.ai/keys</a>. Stored only in your browser.</p>
           <input class="settings-input" id="gemini-key-input" type="password" placeholder="sk-or-v1-..." oninput="this.dataset.masked='false'">
           <label style="font-size:.72rem;color:#888;display:block;margin-top:10px;margin-bottom:4px">Model</label>
-          <input class="settings-input" id="openrouter-model-input" type="text" placeholder="anthropic/claude-sonnet-4.5">
+          <input class="settings-input" id="openrouter-model-input" type="text" placeholder="meta-llama/llama-3.3-70b-instruct:free">
+          <p style="font-size:.72rem;color:#999;margin-top:4px;margin-bottom:0">Default is a free model. Swap in any OpenRouter model ID (paid models need credits in your OpenRouter account). Free models are rate-limited (~20 req/min), fine for occasional summaries.</p>
           <button class="btn btn-p btn-sm" onclick="saveGeminiKey()">Save</button>
         </div>
         <div class="card">
@@ -893,7 +894,7 @@ const EMAIL_KEY   = 'tyc_prov_emails_v3'; // synced to Sheet
 const ISSUES_KEY  = 'tyc_issues_v1';
 const GEMINI_KEY  = 'tyc_openrouter_key';
 const OPENROUTER_MODEL_KEY = 'tyc_openrouter_model';
-const DEFAULT_OPENROUTER_MODEL = 'anthropic/claude-sonnet-4.5';
+const DEFAULT_OPENROUTER_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
 const EVENTS_KEY  = 'tyc_events_v1';
 const BILLS_KEY   = 'tyc_bills_v1';
 const TASKS_KEY   = 'tyc_tasks_v1';
