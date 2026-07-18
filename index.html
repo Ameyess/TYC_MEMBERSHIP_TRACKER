@@ -695,6 +695,38 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
           </div>
         </div>
         <div class="card">
+          <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">Membership Badges (Discord)</h3>
+          <p style="font-size:.82rem;color:#666;margin-bottom:12px">Daily, active members' tenure is checked against New (0-2mo) / Established (3mo) / Senior (1yr) / Distinguished (2yr) / Legacy (3yr). On a tier change: a certificate email goes out, an announcement posts to your webhook channel, and their Discord role is swapped automatically.</p>
+          <div class="tgl-row" style="margin-bottom:14px">
+            <div>
+              <div id="badge-auto-label" style="font-weight:600;font-size:.83rem">Loading...</div>
+              <div style="font-size:.72rem;color:#888">Master switch for the whole badge system.</div>
+            </div>
+            <label class="tgl">
+              <input type="checkbox" id="badge-auto-toggle" disabled>
+              <span class="tgl-slider"></span>
+            </label>
+          </div>
+          <label style="font-size:.72rem;color:#888;display:block;margin-bottom:4px">Discord Bot Token</label>
+          <input class="si" id="badge-bot-token" type="password" placeholder="Leave blank to keep current token">
+          <label style="font-size:.72rem;color:#888;display:block;margin-bottom:4px">Discord Guild (Server) ID</label>
+          <input class="si" id="badge-guild-id" placeholder="123456789012345678">
+          <label style="font-size:.72rem;color:#888;display:block;margin-bottom:4px">#badges Webhook URL</label>
+          <input class="si" id="badge-webhook-url" placeholder="https://discord.com/api/webhooks/...">
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee">
+            <label style="font-size:.72rem;color:#888;display:block;margin-bottom:4px">Role IDs per tier</label>
+            <input class="si" id="badge-role-New Member" placeholder="New Member role ID">
+            <input class="si" id="badge-role-Established Member" placeholder="Established Member role ID">
+            <input class="si" id="badge-role-Senior Member" placeholder="Senior Member role ID">
+            <input class="si" id="badge-role-Distinguished Member" placeholder="Distinguished Member role ID">
+            <input class="si" id="badge-role-Legacy Member" placeholder="Legacy Member role ID">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button class="btn btn-p btn-sm" onclick="saveDiscordBadgeConfig()">Save</button>
+            <button class="btn btn-o btn-sm" onclick="runBadgeCheckNow()" id="badge-run-btn">Run Badge Check Now</button>
+          </div>
+        </div>
+        <div class="card">
           <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">Google Sheets Connection</h3>
           <input class="si" id="sheets-url-input" placeholder="https://script.google.com/macros/s/...">
           <div style="display:flex;gap:8px"><button class="btn btn-p btn-sm" onclick="saveSheetURL()">Save URL</button><button class="btn btn-o btn-sm" onclick="doRefresh()">Sync Now</button></div>
@@ -775,6 +807,7 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
       <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Phone</div><div style="font-size:.85rem" id="prof-phone"></div></div>
       <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Joined</div><div style="font-size:.85rem" id="prof-joined"></div></div>
       <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Birthday</div><div style="font-size:.85rem" id="prof-birthday"></div></div>
+      <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Badge Tier</div><div style="font-size:.85rem" id="prof-badge"></div></div>
     </div>
     <div style="border-top:1px solid #eef0f8;padding-top:16px">
       <div class="sh"><h2 style="font-size:.88rem">Issues Log</h2>
@@ -1339,6 +1372,7 @@ function openProfile(id){
   document.getElementById('prof-joined').textContent = displayJoined;
   const bd = m.birthday ? parseBirthday(m.birthday) : null;
   document.getElementById('prof-birthday').textContent = bd ? (MONTHS[bd.month]+' '+bd.day+(bd.year?' '+bd.year:'')) : 'N/A';
+  document.getElementById('prof-badge').textContent = m.badgeTier || 'Not yet assigned';
   renderIssues(id);
   document.getElementById('profile-modal').classList.add('open');
 }
@@ -1915,6 +1949,7 @@ function renderSettings(){
   if(modelInput) modelInput.value = localStorage.getItem(OPENROUTER_MODEL_KEY) || DEFAULT_OPENROUTER_MODEL;
   document.getElementById('sheets-url-input').value=getURL();
   loadAutoSendState();
+  loadDiscordBadgeConfig();
   // Only C-Suite can see admin management
   const adminSection = document.getElementById('admin-list').closest('.card');
   if(CU?.role !== 'C-Suite'){
@@ -1971,6 +2006,73 @@ async function toggleAutoSend(){
   }
   toggleEl.disabled=false;
 }
+
+const BADGE_TIER_KEYS = ['New Member','Established Member','Senior Member','Distinguished Member','Legacy Member'];
+
+async function loadDiscordBadgeConfig(){
+  const labelEl=document.getElementById('badge-auto-label');
+  const toggleEl=document.getElementById('badge-auto-toggle');
+  if(!labelEl||!toggleEl) return;
+  labelEl.textContent='Loading...';
+  try{
+    const res=await callScript({action:'getDiscordConfig'});
+    const on=!!(res&&res.enabled);
+    toggleEl.checked=on;
+    toggleEl.disabled=false;
+    labelEl.textContent=on?'Badge automation is ON':'Badge automation is OFF';
+    document.getElementById('badge-guild-id').value=res?.guildId||'';
+    document.getElementById('badge-webhook-url').value=res?.webhookUrl||'';
+    const tokenInput=document.getElementById('badge-bot-token');
+    tokenInput.placeholder = res?.hasToken ? 'Saved (leave blank to keep it)' : 'AIza... / your bot token';
+    BADGE_TIER_KEYS.forEach(k=>{
+      const el=document.getElementById('badge-role-'+k);
+      if(el) el.value=(res?.roles&&res.roles[k])||'';
+    });
+  }catch(e){
+    labelEl.textContent='Could not load setting';
+  }
+}
+
+async function saveDiscordBadgeConfig(){
+  const btn=event?.target;
+  const roles={};
+  BADGE_TIER_KEYS.forEach(k=>{
+    const el=document.getElementById('badge-role-'+k);
+    if(el&&el.value.trim()) roles[k]=el.value.trim();
+  });
+  const payload={
+    enabled: document.getElementById('badge-auto-toggle').checked,
+    guildId: document.getElementById('badge-guild-id').value.trim(),
+    webhookUrl: document.getElementById('badge-webhook-url').value.trim(),
+    botToken: document.getElementById('badge-bot-token').value.trim(),
+    roles: roles
+  };
+  try{
+    const res=await callScript({action:'saveDiscordConfig',data:JSON.stringify(payload)});
+    if(res&&res.success){
+      showToast('Badge automation settings saved.');
+      document.getElementById('badge-bot-token').value='';
+      loadDiscordBadgeConfig();
+    }else{
+      showToast('Error: '+(res?.error||'Could not save.'));
+    }
+  }catch(e){
+    showToast('Connection error. Settings not saved.');
+  }
+}
+
+async function runBadgeCheckNow(){
+  const btn=document.getElementById('badge-run-btn');
+  btn.disabled=true; btn.textContent='Running...';
+  try{
+    const res=await callScript({action:'runBadgeCheck'});
+    showToast('Checked '+(res?.checked||0)+', updated '+(res?.updated||0)+', emailed '+(res?.emailed||0)+', roles updated '+(res?.rolesUpdated||0)+'.');
+  }catch(e){
+    showToast('Connection error running badge check.');
+  }
+  btn.disabled=false; btn.textContent='Run Badge Check Now';
+}
+
 function saveGeminiKey(){
   const input=document.getElementById('gemini-key-input');
   const modelInput=document.getElementById('openrouter-model-input');
