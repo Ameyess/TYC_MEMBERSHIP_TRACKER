@@ -786,7 +786,23 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
       <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Phone</div><div style="font-size:.85rem" id="prof-phone"></div></div>
       <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Joined</div><div style="font-size:.85rem" id="prof-joined"></div></div>
       <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Birthday</div><div style="font-size:.85rem" id="prof-birthday"></div></div>
-      <div><div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Badge Tier</div><div style="font-size:.85rem" id="prof-badge"></div></div>
+      <div>
+        <div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Badge Tier</div>
+        <div style="font-size:.85rem;margin-bottom:6px" id="prof-badge-tier"></div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <select id="prof-badge-select" class="si" style="width:auto;margin-bottom:0;padding:6px 8px;font-size:.78rem">
+            <option value="New Member">New Member</option>
+            <option value="Established Member">Established Member</option>
+            <option value="Senior Member">Senior Member</option>
+            <option value="Distinguished Member">Distinguished Member</option>
+            <option value="Legacy Member">Legacy Member</option>
+          </select>
+          <button class="btn btn-o btn-sm" onclick="applyBadgeOverride()" id="prof-badge-apply-btn">Change</button>
+        </div>
+        <label style="font-size:.72rem;color:#888;display:flex;align-items:center;gap:5px;margin-top:6px">
+          <input type="checkbox" id="prof-badge-notify" checked style="margin:0"> Send certificate email + #badges announcement
+        </label>
+      </div>
     </div>
     <div style="border-top:1px solid #eef0f8;padding-top:16px">
       <div class="sh"><h2 style="font-size:.88rem">Issues Log</h2>
@@ -1349,9 +1365,38 @@ function openProfile(id){
   document.getElementById('prof-joined').textContent = displayJoined;
   const bd = m.birthday ? parseBirthday(m.birthday) : null;
   document.getElementById('prof-birthday').textContent = bd ? (MONTHS[bd.month]+' '+bd.day+(bd.year?' '+bd.year:'')) : 'N/A';
-  document.getElementById('prof-badge').textContent = m.badgeTier || 'Not yet assigned';
+  document.getElementById('prof-badge-tier').textContent = m.badgeTier || 'Not yet assigned';
+  document.getElementById('prof-badge-select').value = m.badgeTier || 'New Member';
+  document.getElementById('prof-badge-notify').checked = true;
   renderIssues(id);
   document.getElementById('profile-modal').classList.add('open');
+}
+
+async function applyBadgeOverride(){
+  const id = currentProfileId;
+  const m = MB.find(x=>x.id===id);
+  if(!id||!m) return;
+  const tier = document.getElementById('prof-badge-select').value;
+  const notify = document.getElementById('prof-badge-notify').checked;
+  if(tier===m.badgeTier){ showToast('Already set to '+tier+'.'); return; }
+  if(!confirm('Change '+m.name+' to '+tier+'?'+(notify?' This will send a certificate email and post a #badges announcement.':' No email or announcement will be sent (Discord role still updates if configured).'))) return;
+
+  const btn = document.getElementById('prof-badge-apply-btn');
+  btn.disabled=true; btn.textContent='Applying...';
+  try{
+    const res = await callScript({action:'overrideBadge', id:id, tier:tier, notify: notify?'true':'false'});
+    if(res && res.success){
+      showToast('Badge tier updated.'+(res.emailed?' Email sent.':'')+(res.roleUpdated?' Discord role updated.':' Discord role not updated (check username match / config).'));
+      document.getElementById('prof-badge-tier').textContent = tier;
+      m.badgeTier = tier;
+      doRefresh();
+    } else {
+      showToast('Error: '+(res?.error||'Could not update badge tier.'));
+    }
+  }catch(e){
+    showToast('Connection error updating badge tier.');
+  }
+  btn.disabled=false; btn.textContent='Change';
 }
 
 function renderIssues(id){
