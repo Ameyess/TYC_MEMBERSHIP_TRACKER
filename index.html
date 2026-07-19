@@ -541,16 +541,16 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
         </div>
       </div>
 
-      <!-- AI Summary Card (via OpenRouter) -->
+      <!-- AI Summary Card (via Gemini) -->
       <div style="background:linear-gradient(135deg,#0d0060 0%,#1a0080 50%,#249EBF 100%);border-radius:var(--radius);padding:22px 24px;margin-bottom:20px;color:#fff">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
           <div>
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.7">AI Summary via OpenRouter</span>
+              <span style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.7">Gemini AI</span>
             </div>
             <h3 style="font-size:1rem;font-weight:700;margin-bottom:4px">AI Feedback Summary</h3>
-            <p style="font-size:.8rem;opacity:.7;margin-bottom:0">Analyzes all feedback responses and identifies key themes, issues, and actionable improvements.</p>
+            <p style="font-size:.8rem;opacity:.7;margin-bottom:0">Gemini analyzes all feedback responses and identifies key themes, issues, and actionable improvements.</p>
           </div>
           <button class="btn btn-sm" onclick="generateGeminiSummary()" id="gemini-btn"
             style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);flex-shrink:0;backdrop-filter:blur(4px)">
@@ -564,19 +564,17 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
           <span>Analyzing feedback...</span>
         </div>
         <div id="gemini-key-missing" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15)">
-          <p style="font-size:.82rem;opacity:.8">To enable AI summaries, add your OpenRouter API key in <strong>Settings</strong>.</p>
+          <p style="font-size:.82rem;opacity:.8">To enable AI summaries, add your Gemini API key in <strong>Settings</strong>.</p>
         </div>
       </div>
 
       <!-- Score Summary -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px" id="fb-scores"></div>
 
-      <!-- Province filter -->
+      <!-- Provincial Chapter filter -->
       <div style="margin-bottom:16px">
-        <select class="fsel" id="fb-prov-filter" onchange="renderFeedbackPage()" style="width:200px">
-          <option value="">All Provinces</option>
-          <option>Ontario</option><option>Nova Scotia</option><option>Quebec</option>
-          <option>New Brunswick</option><option>Alberta</option><option>Saskatchewan</option>
+        <select class="fsel" id="fb-prov-filter" onchange="renderFeedbackPage()" style="width:220px">
+          <option value="">All Provincial Chapters</option>
         </select>
       </div>
 
@@ -672,12 +670,12 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
     <div class="page" id="page-settings">
       <div style="max-width:560px;display:flex;flex-direction:column;gap:18px">
         <div class="card">
-          <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">OpenRouter AI Key</h3>
-          <p style="font-size:.82rem;color:#666;margin-bottom:10px">Get a key at <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--teal)">openrouter.ai/keys</a>. Stored only in your browser.</p>
-          <input class="settings-input" id="gemini-key-input" type="password" placeholder="sk-or-v1-..." oninput="this.dataset.masked='false'">
+          <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">Gemini AI Key</h3>
+          <p style="font-size:.82rem;color:#666;margin-bottom:10px">Get a key at <a href="https://aistudio.google.com" target="_blank" style="color:var(--teal)">aistudio.google.com</a>. Stored only in your browser.</p>
+          <input class="settings-input" id="gemini-key-input" type="password" placeholder="AIza..." oninput="this.dataset.masked='false'">
           <label style="font-size:.72rem;color:#888;display:block;margin-top:10px;margin-bottom:4px">Model</label>
-          <input class="settings-input" id="openrouter-model-input" type="text" placeholder="meta-llama/llama-3.3-70b-instruct:free">
-          <p style="font-size:.72rem;color:#999;margin-top:4px;margin-bottom:0">Default is a free model. Swap in any OpenRouter model ID (paid models need credits in your OpenRouter account). Free models are rate-limited (~20 req/min), fine for occasional summaries.</p>
+          <input class="settings-input" id="openrouter-model-input" type="text" placeholder="gemini-2.5-flash-lite">
+          <p style="font-size:.72rem;color:#999;margin-top:4px;margin-bottom:0">Default is Gemini's cheapest model (gemini-2.5-flash-lite), plenty for summarizing feedback. Swap to gemini-2.5-flash if you want noticeably better writing quality at a bit more cost.</p>
           <button class="btn btn-p btn-sm" onclick="saveGeminiKey()">Save</button>
         </div>
         <div class="card">
@@ -931,9 +929,9 @@ const LOG_KEY     = 'tyc_log_v4';
 const URL_KEY     = 'tyc_sheet_url_v4';
 const EMAIL_KEY   = 'tyc_prov_emails_v3'; // synced to Sheet
 const ISSUES_KEY  = 'tyc_issues_v1';
-const GEMINI_KEY  = 'tyc_openrouter_key';
-const OPENROUTER_MODEL_KEY = 'tyc_openrouter_model';
-const DEFAULT_OPENROUTER_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+const GEMINI_KEY  = 'tyc_gemini_key';
+const OPENROUTER_MODEL_KEY = 'tyc_gemini_model';
+const DEFAULT_OPENROUTER_MODEL = 'gemini-2.5-flash-lite';
 const EVENTS_KEY  = 'tyc_events_v1';
 const BILLS_KEY   = 'tyc_bills_v1';
 const TASKS_KEY   = 'tyc_tasks_v1';
@@ -2091,8 +2089,8 @@ function saveGeminiKey(){
   localStorage.setItem(OPENROUTER_MODEL_KEY, model || DEFAULT_OPENROUTER_MODEL);
   if(input.dataset.masked==='true'){showToast('Key unchanged, model saved.');return;}
   const k=input.value.trim();
-  if(k){localStorage.setItem(GEMINI_KEY,k);showToast('OpenRouter key saved.');}
-  else{localStorage.removeItem(GEMINI_KEY);showToast('OpenRouter key cleared.');}
+  if(k){localStorage.setItem(GEMINI_KEY,k);showToast('Gemini key saved.');}
+  else{localStorage.removeItem(GEMINI_KEY);showToast('Gemini key cleared.');}
   renderSettings();
 }
 function openAdminModal(){['a-user','a-pass','a-disp'].forEach(id=>document.getElementById(id).value='');document.getElementById('a-role').value='C-Suite';document.getElementById('adm-modal').classList.add('open');}
@@ -2288,14 +2286,23 @@ async function loadFeedback() {
   setSS('sync','Loading feedback...');
   try {
     const data = await callScript({action:'getFeedback'});
-    if (Array.isArray(data)) { FB_DATA = data; setSS('ok','Connected to Google Sheets'); }
+    if (Array.isArray(data)) {
+      FB_DATA = data;
+      setSS('ok','Connected to Google Sheets');
+      const sel = document.getElementById('fb-prov-filter');
+      if (sel) {
+        const current = sel.value;
+        const chapters = [...new Set(FB_DATA.map(r=>r.provChapter).filter(Boolean))].sort();
+        sel.innerHTML = '<option value="">All Provincial Chapters</option>' + chapters.map(c=>`<option${c===current?' selected':''}>${esc(c)}</option>`).join('');
+      }
+    }
   } catch(e) { setSS('err','Could not load feedback'); }
   renderFeedbackPage();
 }
 
 function renderFeedbackPage() {
   const pf = document.getElementById('fb-prov-filter')?.value||'';
-  const data = pf ? FB_DATA.filter(r=>r.province===pf) : FB_DATA;
+  const data = pf ? FB_DATA.filter(r=>r.provChapter===pf) : FB_DATA;
 
   if (!data.length) {
     document.getElementById('fb-scores').innerHTML = '';
@@ -2326,6 +2333,32 @@ function renderFeedbackPage() {
       <div style="font-size:.72rem;color:#aaa">/10 · ${data.length} responses</div>
     </div>`;
   }).join('');
+
+  // Unmuted / Research Team participation
+  const yesPct = key => {
+    const answered = data.map(r=>String(r[key]||'').trim().toLowerCase()).filter(Boolean);
+    if (!answered.length) return null;
+    const yes = answered.filter(v=>v==='yes').length;
+    return Math.round((yes/answered.length)*100);
+  };
+  const partFields = [
+    {key:'unmuted', label:'In Unmuted Program'},
+    {key:'researchTeam', label:'On Research Team'}
+  ];
+  const partHtml = partFields.map(f=>{
+    const pct = yesPct(f.key);
+    return `<div class="card" style="text-align:center">
+      <div style="font-size:.68rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">${f.label}</div>
+      <div style="font-size:2rem;font-weight:800;color:${pct===null?'#aaa':'var(--teal)'}">${pct===null?'—':pct+'%'}</div>
+      <div style="font-size:.72rem;color:#aaa">said yes</div>
+    </div>`;
+  }).join('');
+  const scoresEl = document.getElementById('fb-scores');
+  if (scoresEl && !document.getElementById('fb-participation')) {
+    scoresEl.insertAdjacentHTML('afterend', `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px" id="fb-participation"></div>`);
+  }
+  const partEl = document.getElementById('fb-participation');
+  if (partEl) partEl.innerHTML = partHtml;
 
   // Text responses
   const renderTexts = (id, key) => {
@@ -2377,6 +2410,16 @@ async function generateGeminiSummary() {
   const leadershipTexts = FB_DATA.map(r=>r.leadershipDiff).filter(Boolean).slice(0,20).join(' | ');
   const otherTexts = FB_DATA.map(r=>r.other).filter(Boolean).slice(0,10).join(' | ');
 
+  const yesPctPrompt = key => {
+    const answered = FB_DATA.map(r=>String(r[key]||'').trim().toLowerCase()).filter(Boolean);
+    if (!answered.length) return 'N/A';
+    const yes = answered.filter(v=>v==='yes').length;
+    return Math.round((yes/answered.length)*100)+'% ('+answered.length+' answered)';
+  };
+  const chapterCounts = {};
+  FB_DATA.forEach(r=>{ if(r.provChapter) chapterCounts[r.provChapter]=(chapterCounts[r.provChapter]||0)+1; });
+  const chapterBreakdown = Object.entries(chapterCounts).map(([k,v])=>k+': '+v).join(', ') || 'N/A';
+
   const prompt = `You are analyzing member feedback for The Young Constituents (TYC), a Canadian youth governance organization with chapters across 6 provinces.
 
 QUANTITATIVE SCORES (out of 10, ${FB_DATA.length} total responses):
@@ -2389,6 +2432,11 @@ QUANTITATIVE SCORES (out of 10, ${FB_DATA.length} total responses):
 - Role & Structure Clarity: ${avg('roleClarity')}/10
 - Communication Effectiveness: ${avg('commEffective')}/10
 - Meeting Usefulness: ${avg('meetings')}/10
+
+PARTICIPATION:
+- In Unmuted Program: ${yesPctPrompt('unmuted')}
+- On Research Team: ${yesPctPrompt('researchTeam')}
+- Responses by Provincial Chapter: ${chapterBreakdown}
 
 OPEN RESPONSES:
 What members want improved: ${improveTexts||'None'}
@@ -2407,38 +2455,39 @@ Keep the tone professional but direct. Format clearly with headers. Be specific 
   try {
     const model = localStorage.getItem(OPENROUTER_MODEL_KEY) || DEFAULT_OPENROUTER_MODEL;
     const res = await fetch(
-      'https://openrouter.ai/api/v1/chat/completions',
+      'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+geminiKey,
       {
         method:'POST',
-        headers:{
-          'Content-Type':'application/json',
-          'Authorization':'Bearer '+geminiKey,
-          'HTTP-Referer':window.location.origin,
-          'X-Title':'TYC Operations Portal'
-        },
-        body:JSON.stringify({model:model, messages:[{role:'user', content:prompt}]})
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{parts:[{text:prompt}]}],
+          generationConfig:{
+            maxOutputTokens: 900,
+            thinkingConfig: { thinkingBudget: 0 }
+          }
+        })
       }
     );
     const data = await res.json();
     if (!res.ok) {
       const apiErr = data?.error?.message || ('HTTP '+res.status);
-      document.getElementById('gemini-text').textContent='OpenRouter API error: '+apiErr;
+      document.getElementById('gemini-text').textContent='Gemini API error: '+apiErr;
       document.getElementById('gemini-output').style.display='block';
       document.getElementById('gemini-loading').style.display='none';
       document.getElementById('gemini-btn').disabled=false;
       document.getElementById('gemini-btn').textContent='Regenerate Summary';
       return;
     }
-    const text = data?.choices?.[0]?.message?.content;
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (text) {
       document.getElementById('gemini-text').textContent=text;
       document.getElementById('gemini-output').style.display='block';
     } else {
-      document.getElementById('gemini-text').textContent='No response from OpenRouter. Check your API key.';
+      document.getElementById('gemini-text').textContent='No response from Gemini. Check your API key.';
       document.getElementById('gemini-output').style.display='block';
     }
   } catch(e) {
-    document.getElementById('gemini-text').textContent='Error connecting to OpenRouter: '+e.message;
+    document.getElementById('gemini-text').textContent='Error connecting to Gemini: '+e.message;
     document.getElementById('gemini-output').style.display='block';
   }
 
