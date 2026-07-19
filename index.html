@@ -541,31 +541,15 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
         </div>
       </div>
 
-      <!-- AI Summary Card (via Gemini) -->
+      <!-- Insights Card (computed, no API) -->
       <div style="background:linear-gradient(135deg,#0d0060 0%,#1a0080 50%,#249EBF 100%);border-radius:var(--radius);padding:22px 24px;margin-bottom:20px;color:#fff">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
-          <div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.7">Gemini AI</span>
-            </div>
-            <h3 style="font-size:1rem;font-weight:700;margin-bottom:4px">AI Feedback Summary</h3>
-            <p style="font-size:.8rem;opacity:.7;margin-bottom:0">Gemini analyzes all feedback responses and identifies key themes, issues, and actionable improvements.</p>
-          </div>
-          <button class="btn btn-sm" onclick="generateGeminiSummary()" id="gemini-btn"
-            style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);flex-shrink:0;backdrop-filter:blur(4px)">
-            Generate Summary
-          </button>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 3v18h18M7 15l4-6 3 3 5-8" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.7">Auto-Generated</span>
         </div>
-        <div id="gemini-output" style="display:none;margin-top:18px;padding-top:18px;border-top:1px solid rgba(255,255,255,.15)">
-          <div id="gemini-text" style="font-size:.85rem;line-height:1.8;opacity:.92;white-space:pre-wrap"></div>
-        </div>
-        <div id="gemini-loading" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15);font-size:.83rem;opacity:.7">
-          <span>Analyzing feedback...</span>
-        </div>
-        <div id="gemini-key-missing" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15)">
-          <p style="font-size:.82rem;opacity:.8">To enable AI summaries, add your Gemini API key in <strong>Settings</strong>.</p>
-        </div>
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:4px">Feedback Insights</h3>
+        <p style="font-size:.8rem;opacity:.7;margin-bottom:16px">Computed directly from response data, updates automatically as new feedback comes in.</p>
+        <div id="fb-insights" style="font-size:.85rem;line-height:1.9;opacity:.95"></div>
       </div>
 
       <!-- Score Summary -->
@@ -669,15 +653,6 @@ tbody td{padding:11px 14px;font-size:.81rem;vertical-align:middle}
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div style="max-width:560px;display:flex;flex-direction:column;gap:18px">
-        <div class="card">
-          <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">Gemini AI Key</h3>
-          <p style="font-size:.82rem;color:#666;margin-bottom:10px">Get a key at <a href="https://aistudio.google.com" target="_blank" style="color:var(--teal)">aistudio.google.com</a>. Stored only in your browser.</p>
-          <input class="settings-input" id="gemini-key-input" type="password" placeholder="AIza..." oninput="this.dataset.masked='false'">
-          <label style="font-size:.72rem;color:#888;display:block;margin-top:10px;margin-bottom:4px">Model</label>
-          <input class="settings-input" id="openrouter-model-input" type="text" placeholder="gemini-2.5-flash-lite">
-          <p style="font-size:.72rem;color:#999;margin-top:4px;margin-bottom:0">Default is Gemini's cheapest model (gemini-2.5-flash-lite), plenty for summarizing feedback. Swap to gemini-2.5-flash if you want noticeably better writing quality at a bit more cost.</p>
-          <button class="btn btn-p btn-sm" onclick="saveGeminiKey()">Save</button>
-        </div>
         <div class="card">
           <h3 style="font-size:.9rem;font-weight:700;margin-bottom:8px">Auto-Send Onboarding Emails</h3>
           <p style="font-size:.82rem;color:#666;margin-bottom:12px">When ON, the welcome email and provincial director routing email are sent automatically the moment someone submits the member intake form, no manual click needed. Flip it off any time to go back to sending them yourself from the Pipeline.</p>
@@ -929,9 +904,7 @@ const LOG_KEY     = 'tyc_log_v4';
 const URL_KEY     = 'tyc_sheet_url_v4';
 const EMAIL_KEY   = 'tyc_prov_emails_v3'; // synced to Sheet
 const ISSUES_KEY  = 'tyc_issues_v1';
-const GEMINI_KEY  = 'tyc_gemini_key';
-const OPENROUTER_MODEL_KEY = 'tyc_gemini_model';
-const DEFAULT_OPENROUTER_MODEL = 'gemini-2.5-flash-lite';
+
 const EVENTS_KEY  = 'tyc_events_v1';
 const BILLS_KEY   = 'tyc_bills_v1';
 const TASKS_KEY   = 'tyc_tasks_v1';
@@ -1943,14 +1916,6 @@ async function sendBothEmails() {
 
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
 function renderSettings(){
-  const gk=localStorage.getItem(GEMINI_KEY)||'';
-  const gkInput=document.getElementById('gemini-key-input');
-  if(gkInput){
-    gkInput.value=gk?'••••••••••••••••':'';
-    gkInput.dataset.masked = gk ? 'true' : 'false';
-  }
-  const modelInput=document.getElementById('openrouter-model-input');
-  if(modelInput) modelInput.value = localStorage.getItem(OPENROUTER_MODEL_KEY) || DEFAULT_OPENROUTER_MODEL;
   document.getElementById('sheets-url-input').value=getURL();
   loadAutoSendState();
   loadDiscordBadgeConfig();
@@ -2082,17 +2047,6 @@ async function runBadgeCheckNow(){
   btn.disabled=false; btn.textContent='Run Badge Check Now';
 }
 
-function saveGeminiKey(){
-  const input=document.getElementById('gemini-key-input');
-  const modelInput=document.getElementById('openrouter-model-input');
-  const model=(modelInput.value||'').trim();
-  localStorage.setItem(OPENROUTER_MODEL_KEY, model || DEFAULT_OPENROUTER_MODEL);
-  if(input.dataset.masked==='true'){showToast('Key unchanged, model saved.');return;}
-  const k=input.value.trim();
-  if(k){localStorage.setItem(GEMINI_KEY,k);showToast('Gemini key saved.');}
-  else{localStorage.removeItem(GEMINI_KEY);showToast('Gemini key cleared.');}
-  renderSettings();
-}
 function openAdminModal(){['a-user','a-pass','a-disp'].forEach(id=>document.getElementById(id).value='');document.getElementById('a-role').value='C-Suite';document.getElementById('adm-modal').classList.add('open');}
 function saveAdmin(){const u=document.getElementById('a-user').value.trim(),p=document.getElementById('a-pass').value,r=document.getElementById('a-role').value,d=document.getElementById('a-disp').value.trim();if(!u||!p||!d){showToast('Fill all fields.');return;}const a=getAdmins();a.push({username:u,password:p,role:r,display:d});saveAdmins(a);closeModal('adm-modal');renderSettings();showToast('Admin added.');}
 function removeAdmin(i){if(!confirm('Remove?'))return;const a=getAdmins();a.splice(i,1);saveAdmins(a);renderSettings();showToast('Removed.');}
@@ -2301,6 +2255,7 @@ async function loadFeedback() {
 }
 
 function renderFeedbackPage() {
+  renderFeedbackInsights();
   const pf = document.getElementById('fb-prov-filter')?.value||'';
   const data = pf ? FB_DATA.filter(r=>r.provChapter===pf) : FB_DATA;
 
@@ -2384,116 +2339,83 @@ function renderFeedbackPage() {
     : '<p style="font-size:.8rem;color:#aaa">No data.</p>';
 }
 
-async function generateGeminiSummary() {
-  const geminiKey = localStorage.getItem(GEMINI_KEY)||'';
-  if (!geminiKey) {
-    document.getElementById('gemini-key-missing').style.display='block';
-    document.getElementById('gemini-output').style.display='none';
+function renderFeedbackInsights() {
+  const el = document.getElementById('fb-insights');
+  if (!el) return;
+  if (!FB_DATA.length) {
+    el.innerHTML = '<p style="opacity:.7">No feedback responses yet.</p>';
     return;
   }
-  if (!FB_DATA.length) { showToast('No feedback data loaded yet.'); return; }
 
-  document.getElementById('gemini-btn').disabled=true;
-  document.getElementById('gemini-btn').textContent='Generating...';
-  document.getElementById('gemini-loading').style.display='block';
-  document.getElementById('gemini-output').style.display='none';
-  document.getElementById('gemini-key-missing').style.display='none';
-
-  // Build context for Gemini
+  const scoreFieldLabels = {
+    overallExp:'Overall Experience', engaged:'Engagement in Role', motivated:'Motivation',
+    energized:'Energy Level', supported:'Feeling Supported by Leadership', direction:'Direction Clarity',
+    roleClarity:'Role & Structure Clarity', commEffective:'Communication Effectiveness', meetings:'Meeting Usefulness'
+  };
   const avg = key => {
-    const vals=FB_DATA.map(r=>parseFloat(r[key])).filter(v=>!isNaN(v)&&v>0);
-    return vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):'N/A';
+    const vals = FB_DATA.map(r=>parseFloat(r[key])).filter(v=>!isNaN(v)&&v>0);
+    return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length) : null;
   };
+  const scoreAverages = Object.keys(scoreFieldLabels).map(k=>({key:k, label:scoreFieldLabels[k], avg:avg(k)})).filter(s=>s.avg!==null);
 
-  const improveTexts = FB_DATA.map(r=>r.improve).filter(Boolean).slice(0,20).join(' | ');
-  const continueTexts = FB_DATA.map(r=>r.continueDoing).filter(Boolean).slice(0,20).join(' | ');
-  const leadershipTexts = FB_DATA.map(r=>r.leadershipDiff).filter(Boolean).slice(0,20).join(' | ');
-  const otherTexts = FB_DATA.map(r=>r.other).filter(Boolean).slice(0,10).join(' | ');
+  let lines = [];
+  lines.push(`<strong>${FB_DATA.length}</strong> total response${FB_DATA.length===1?'':'s'} on file.`);
 
-  const yesPctPrompt = key => {
-    const answered = FB_DATA.map(r=>String(r[key]||'').trim().toLowerCase()).filter(Boolean);
-    if (!answered.length) return 'N/A';
-    const yes = answered.filter(v=>v==='yes').length;
-    return Math.round((yes/answered.length)*100)+'% ('+answered.length+' answered)';
-  };
-  const chapterCounts = {};
-  FB_DATA.forEach(r=>{ if(r.provChapter) chapterCounts[r.provChapter]=(chapterCounts[r.provChapter]||0)+1; });
-  const chapterBreakdown = Object.entries(chapterCounts).map(([k,v])=>k+': '+v).join(', ') || 'N/A';
-
-  const prompt = `You are analyzing member feedback for The Young Constituents (TYC), a Canadian youth governance organization with chapters across 6 provinces.
-
-QUANTITATIVE SCORES (out of 10, ${FB_DATA.length} total responses):
-- Overall Experience: ${avg('overallExp')}/10
-- Engagement in Role: ${avg('engaged')}/10
-- Motivation: ${avg('motivated')}/10
-- Energy Level: ${avg('energized')}/10
-- Feeling Supported by Leadership: ${avg('supported')}/10
-- Direction Clarity: ${avg('direction')}/10
-- Role & Structure Clarity: ${avg('roleClarity')}/10
-- Communication Effectiveness: ${avg('commEffective')}/10
-- Meeting Usefulness: ${avg('meetings')}/10
-
-PARTICIPATION:
-- In Unmuted Program: ${yesPctPrompt('unmuted')}
-- On Research Team: ${yesPctPrompt('researchTeam')}
-- Responses by Provincial Chapter: ${chapterBreakdown}
-
-OPEN RESPONSES:
-What members want improved: ${improveTexts||'None'}
-What members want continued: ${continueTexts||'None'}
-Leadership feedback: ${leadershipTexts||'None'}
-Other comments: ${otherTexts||'None'}
-
-Please provide a concise, actionable summary for TYC leadership with:
-1. TOP 3 ISSUES (most urgent problems to address)
-2. TOP 3 STRENGTHS (what is working well)
-3. SPECIFIC ACTION ITEMS (concrete steps leadership should take in the next 30 days)
-4. RISK FLAGS (anything that could cause member attrition if not addressed)
-
-Keep the tone professional but direct. Format clearly with headers. Be specific and reference the actual data.`;
-
-  try {
-    const model = localStorage.getItem(OPENROUTER_MODEL_KEY) || DEFAULT_OPENROUTER_MODEL;
-    const res = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+geminiKey,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          contents:[{parts:[{text:prompt}]}],
-          generationConfig:{
-            maxOutputTokens: 900,
-            thinkingConfig: { thinkingBudget: 0 }
-          }
-        })
-      }
-    );
-    const data = await res.json();
-    if (!res.ok) {
-      const apiErr = data?.error?.message || ('HTTP '+res.status);
-      document.getElementById('gemini-text').textContent='Gemini API error: '+apiErr;
-      document.getElementById('gemini-output').style.display='block';
-      document.getElementById('gemini-loading').style.display='none';
-      document.getElementById('gemini-btn').disabled=false;
-      document.getElementById('gemini-btn').textContent='Regenerate Summary';
-      return;
+  if (scoreAverages.length) {
+    const sorted = [...scoreAverages].sort((a,b)=>b.avg-a.avg);
+    const strongest = sorted[0], weakest = sorted[sorted.length-1];
+    lines.push(`Strongest area: <strong>${strongest.label}</strong> (${strongest.avg.toFixed(1)}/10). Weakest area: <strong>${weakest.label}</strong> (${weakest.avg.toFixed(1)}/10)${weakest.avg<6?', worth prioritizing':''}.`);
+    const lowScores = sorted.filter(s=>s.avg<5);
+    if (lowScores.length) {
+      lines.push(`⚠️ Below 5/10: ${lowScores.map(s=>s.label+' ('+s.avg.toFixed(1)+')').join(', ')}.`);
     }
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (text) {
-      document.getElementById('gemini-text').textContent=text;
-      document.getElementById('gemini-output').style.display='block';
-    } else {
-      document.getElementById('gemini-text').textContent='No response from Gemini. Check your API key.';
-      document.getElementById('gemini-output').style.display='block';
-    }
-  } catch(e) {
-    document.getElementById('gemini-text').textContent='Error connecting to Gemini: '+e.message;
-    document.getElementById('gemini-output').style.display='block';
   }
 
-  document.getElementById('gemini-loading').style.display='none';
-  document.getElementById('gemini-btn').disabled=false;
-  document.getElementById('gemini-btn').textContent='Regenerate Summary';
+  // Participation
+  const yesPct = key => {
+    const answered = FB_DATA.map(r=>String(r[key]||'').trim().toLowerCase()).filter(Boolean);
+    if (!answered.length) return null;
+    const yes = answered.filter(v=>v==='yes').length;
+    return { pct: Math.round((yes/answered.length)*100), n: answered.length };
+  };
+  const unmuted = yesPct('unmuted'), research = yesPct('researchTeam');
+  const partBits = [];
+  if (unmuted) partBits.push(`${unmuted.pct}% in the Unmuted Program (${unmuted.n} answered)`);
+  if (research) partBits.push(`${research.pct}% on the Research Team (${research.n} answered)`);
+  if (partBits.length) lines.push(partBits.join(' · ') + '.');
+
+  // Chapter breakdown
+  const chapterCounts = {};
+  FB_DATA.forEach(r=>{ if(r.provChapter) chapterCounts[r.provChapter]=(chapterCounts[r.provChapter]||0)+1; });
+  const chapterEntries = Object.entries(chapterCounts).sort((a,b)=>b[1]-a[1]);
+  if (chapterEntries.length) {
+    lines.push(`Responses by chapter: ${chapterEntries.map(([k,v])=>k+' ('+v+')').join(', ')}.`);
+  }
+
+  // Most common motivation factor
+  const factors = {};
+  FB_DATA.forEach(r=>{ if(r.motivationFactor) String(r.motivationFactor).split(',').forEach(f=>{ const k=f.trim(); if(k) factors[k]=(factors[k]||0)+1; }); });
+  const topFactor = Object.entries(factors).sort((a,b)=>b[1]-a[1])[0];
+  if (topFactor) lines.push(`Most cited motivation factor: <strong>${esc(topFactor[0])}</strong> (${topFactor[1]} mentions).`);
+
+  // Simple keyword frequency across open-text answers
+  const stopwords = new Set(['the','and','that','with','have','this','from','they','would','could','their','about','more','than','into','also','some','just','when','what','which','because','been','were','are','was','for','not','but','you','our','all','can','get','has','had','out','who','how','one','its','it\'s','TYC'.toLowerCase()]);
+  const wordCounts = {};
+  ['improve','continueDoing','leadershipDiff','other'].forEach(key=>{
+    FB_DATA.forEach(r=>{
+      const text = r[key];
+      if (!text) return;
+      String(text).toLowerCase().replace(/[^a-z\s]/g,' ').split(/\s+/).forEach(w=>{
+        if (w.length>=4 && !stopwords.has(w)) wordCounts[w]=(wordCounts[w]||0)+1;
+      });
+    });
+  });
+  const topWords = Object.entries(wordCounts).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if (topWords.length) {
+    lines.push(`Common themes in open responses: ${topWords.map(([w,c])=>w+' ('+c+'x)').join(', ')}.`);
+  }
+
+  el.innerHTML = lines.map(l=>`<div style="margin-bottom:8px">${l}</div>`).join('');
 }
 
 </script>
